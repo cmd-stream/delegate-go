@@ -1,5 +1,5 @@
-# delegate
-delegate is an implementation of the delegate for the `base` module. That is, 
+# delegate-go
+delegate-go is an implementation of the delegate for the `base` module. That is, 
 it contains implementations of the `base.ClientDelegate` and 
 `base.ServerDelegate` interfaces (they are located in the corresponding 
 packages).
