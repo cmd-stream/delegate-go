@@ -56,14 +56,20 @@ func (mock ServerTransport) RegisterSend(
 	return mock
 }
 
+func (mock ServerTransport) RegisterNSend(n int,
+	fn func(seq base.Seq, result base.Result) (err error)) ServerTransport {
+	mock.RegisterN("Send", n, fn)
+	return mock
+}
+
 func (mock ServerTransport) RegisterFlush(fn func() (err error)) ServerTransport {
 	mock.Register("Flush", fn)
 	return mock
 }
 
-func (mock ServerTransport) RegisterNSend(n int,
-	fn func(seq base.Seq, result base.Result) (err error)) ServerTransport {
-	mock.RegisterN("Send", n, fn)
+func (mock ServerTransport) RegisterNFlush(n int,
+	fn func() (err error)) ServerTransport {
+	mock.RegisterN("Flush", n, fn)
 	return mock
 }
 
