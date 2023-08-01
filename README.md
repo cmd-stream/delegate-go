@@ -1,5 +1,6 @@
 # delegate-go
-Provides communication between the cmd-stream client and server for Golang.
+delegate-go provides communication between the cmd-stream client and server for 
+Golang.
 
 It contains implementations of the `base.ClientDelegate` and 
 `base.ServerDelegate` interfaces (they are located in the corresponding 
