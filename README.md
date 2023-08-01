@@ -1,6 +1,7 @@
 # delegate-go
-delegate-go is an implementation of the delegate for the [base-go](https://github.com/cmd-stream/base-go) 
-module. That is, it contains implementations of the `base.ClientDelegate` and 
+Provides communication between the cmd-stream client and server for Golang.
+
+It contains implementations of the `base.ClientDelegate` and 
 `base.ServerDelegate` interfaces (they are located in the corresponding 
 packages).
 
