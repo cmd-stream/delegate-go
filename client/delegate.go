@@ -11,11 +11,11 @@ import (
 
 // New creates a new Delegate.
 //
-// When created, the delegate expects to receive system data (ServerInfo and
+// When created, Delegate expects to receive system data (ServerInfo and
 // ServerSettings) from the server.
 //
-// If the received ServerInfo does not match the specified one,
-// ErrServerInfoMismatch is returned.
+// Returns ErrServerInfoMismatch if received ServerInfo does not match the
+// specified one.
 func New[T any](conf Conf, info delegate.ServerInfo,
 	transport delegate.ClienTransport[T]) (delegate Delegate[T], err error) {
 	err = checkServerInfo(conf.SysDataReceiveTimeout, transport, info)

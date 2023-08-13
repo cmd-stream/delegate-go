@@ -8,8 +8,7 @@ import (
 	"github.com/cmd-stream/delegate-go"
 )
 
-// New creates a new Delegate initialized by the transport factory and the
-// transport handler.
+// New creates a new Delegate initialized by the transport factory and handler.
 //
 // If ServerInfo is empty, it panics with ErrEmptyInfo.
 func New[T any](conf Conf, info delegate.ServerInfo,

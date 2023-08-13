@@ -22,10 +22,10 @@ func NewKeepalive[T any](conf Conf,
 
 // KeepaliveDelegate is an implementation of the base.ClientDelegate interface.
 //
-// KeepaliveDelegate is a delegate which keeps the connection alive.When there
-// is no commands to send, it starts Ping-Pong with the server - sends a Ping
-// command and receives a Pong result, both of which are transfered as a 0 (like
-// a ball) byte.
+// KeepaliveDelegate is a delegate which keeps the connection alive. When there
+// is no commands to send, it starts Ping-Pong with the server - sends the Ping
+// command and receives the Pong result, both of which are transfered as a 0
+// (like a ball) byte.
 type KeepaliveDelegate[T any] struct {
 	base.ClientDelegate[T]
 	conf  Conf

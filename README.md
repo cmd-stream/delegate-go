@@ -1,6 +1,5 @@
 # delegate-go
-delegate-go provides communication between the cmd-stream client and server for 
-Golang.
+delegate-go provides communication between the cmd-stream-go client and server.
 
 It contains implementations of the `base.ClientDelegate` and 
 `base.ServerDelegate` interfaces (they are located in the corresponding 
@@ -24,8 +23,8 @@ Also in the `client` package you can find `KeepaliveDelegate` and
 `ReconnectDelegate`.
 
 `KeepaliveDelegate` starts playing the Ping-Pong game with the server when 
-there are no commands to send - it sends a `Ping` command and receives a `Pong` 
-result, both of which are transmitted as a 0 (like a ball) byte.
+there are no commands to send - it sends the `Ping` command and receives the 
+`Pong` result, both of which are transmitted as a 0 (like a ball) byte.
 
 `ReconnectDelegate` is an implementation of the `base.ClientReconnectDelegate`
 interface, it has a `Reconnect` method that can be used by the client if the 

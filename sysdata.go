@@ -22,7 +22,7 @@ func UnmarshalServerInfoMUS(r muss.Reader) (info ServerInfo, n int, err error) {
 		r)
 }
 
-// SizeServerInfoMUS returns the size of the ServerInfo in the MUS format.
+// SizeServerInfoMUS returns the size of ServerInfo in the MUS format.
 func SizeServerInfoMUS(info ServerInfo) (size int) {
 	return ord.SizeSlice[byte](info, muss.SizerFn[byte](raw.SizeByte))
 }
@@ -48,7 +48,7 @@ func UnmarshalServerSettingsMUS(r muss.Reader) (settings ServerSettings, n int,
 	return
 }
 
-// SizeServerSettingsMUS returns the size of the ServerSettings in the MUS
+// SizeServerSettingsMUS returns the size of ServerSettings in the MUS
 // format.
 func SizeServerSettingsMUS(settings ServerSettings) (size int) {
 	return varint.SizeInt(settings.MaxCmdSize)
