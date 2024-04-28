@@ -2,7 +2,6 @@ package mock
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/cmd-stream/delegate-go"
 	"github.com/ymz-ncnk/mok"
@@ -26,19 +25,8 @@ func (mock TransportHandler) RegisterHandle(
 
 func (mock TransportHandler) Handle(ctx context.Context,
 	transport delegate.ServerTransport[any]) (err error) {
-	var ctxVal reflect.Value
-	if ctx == nil {
-		ctxVal = reflect.Zero(reflect.TypeOf((*context.Context)(nil)).Elem())
-	} else {
-		ctxVal = reflect.ValueOf(ctx)
-	}
-	var transportVal reflect.Value
-	if transport == nil {
-		transportVal = reflect.Zero(reflect.TypeOf((*delegate.ServerTransport[any])(nil)).Elem())
-	} else {
-		transportVal = reflect.ValueOf(transport)
-	}
-	vals, err := mock.Call("Handle", ctxVal, transportVal)
+	vals, err := mock.Call("Handle", mok.SafeVal[context.Context](ctx),
+		mok.SafeVal[delegate.ServerTransport[any]](transport))
 	if err != nil {
 		panic(err)
 	}

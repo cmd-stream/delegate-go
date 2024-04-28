@@ -2,7 +2,6 @@ package mock
 
 import (
 	"net"
-	"reflect"
 
 	"github.com/cmd-stream/delegate-go"
 	"github.com/ymz-ncnk/mok"
@@ -25,13 +24,7 @@ func (mock ServerTransportFactory) RegisterNew(
 }
 
 func (mock ServerTransportFactory) New(conn net.Conn) (transport delegate.ServerTransport[any]) {
-	var connVal reflect.Value
-	if conn == nil {
-		connVal = reflect.Zero(reflect.TypeOf((*net.Conn)(nil)).Elem())
-	} else {
-		connVal = reflect.ValueOf(conn)
-	}
-	vals, err := mock.Call("New", connVal)
+	vals, err := mock.Call("New", mok.SafeVal[net.Conn](conn))
 	if err != nil {
 		panic(err)
 	}

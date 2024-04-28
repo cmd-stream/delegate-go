@@ -2,7 +2,6 @@ package mock
 
 import (
 	"net"
-	"reflect"
 	"time"
 
 	"github.com/cmd-stream/base-go"
@@ -144,13 +143,7 @@ func (mock ClienTransport) SetSendDeadline(deadline time.Time) (err error) {
 }
 
 func (mock ClienTransport) Send(seq base.Seq, cmd base.Cmd[any]) (err error) {
-	var cmdVal reflect.Value
-	if cmd == nil {
-		cmdVal = reflect.Zero(reflect.TypeOf((*base.Cmd[any])(nil)).Elem())
-	} else {
-		cmdVal = reflect.ValueOf(cmd)
-	}
-	result, err := mock.Call("Send", seq, cmdVal)
+	result, err := mock.Call("Send", seq, mok.SafeVal[base.Cmd[any]](cmd))
 	if err != nil {
 		panic(err)
 	}
