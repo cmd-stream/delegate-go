@@ -2,8 +2,8 @@ github.com/cmd-stream/base-go v0.0.0-20240428104458-99caa236f969 h1:uQOfPheinM5Z
 github.com/cmd-stream/base-go v0.0.0-20240428104458-99caa236f969/go.mod h1:TGNARVuDSdpKjcnmwMEHuXFKBXw+82CO3MdWbnuWrIs=
 github.com/mus-format/common-go v0.0.0-20240427160332-fda7f59c1da2 h1:VlQlK11OtURHQ1VsdHcp9OFq56i8HEIHURgfEtP9Jek=
 github.com/mus-format/common-go v0.0.0-20240427160332-fda7f59c1da2/go.mod h1:1hTb8w0YdSGIOU6wNY+e9uXnDZ9OQnUivNtd8cPSdoU=
-github.com/mus-format/mus-stream-go v0.2.1 h1:pbcUKyw6kZ3f85rsAx/oRcA/9xYdEoBme3X6crG+K9E=
-github.com/mus-format/mus-stream-go v0.2.1/go.mod h1:Zj8/A/3yx0wGhucGKug4nMvVuf1rhm1a6ecZoLEql/A=
+github.com/mus-format/mus-stream-go v0.2.2 h1:A/rMIsaUxcsB9liy+ATohWMQitErIJQXwIuEK1u8+Vw=
+github.com/mus-format/mus-stream-go v0.2.2/go.mod h1:Zj8/A/3yx0wGhucGKug4nMvVuf1rhm1a6ecZoLEql/A=
 github.com/ymz-ncnk/mok v0.2.0 h1:4xOvkG0EXDlr05ZTSeRzM2q5mbyNbALRqRoI+cTwUyc=
 github.com/ymz-ncnk/mok v0.2.0/go.mod h1:VDVVGULp0vdJeD27SgJghOFGyD7w3nX7SDh8TOlvIsY=
 golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691 h1:/yRP+0AN7mf5DkD3BAI6TOFnd51gEoDEb8o35jIFtgw=
