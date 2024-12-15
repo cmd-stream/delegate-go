@@ -8,7 +8,7 @@ import (
 	"github.com/cmd-stream/base-go"
 )
 
-// Transport is a common transport for the client and server delegates.
+// Transport is a common transport for the client and server Delegates.
 //
 // The sent data can be buffered, so there is a Flush() method.
 type Transport[T, V any] interface {
@@ -25,13 +25,12 @@ type Transport[T, V any] interface {
 	Close() error
 }
 
-// ClienTransportFactory is a factory which creates a transport fot the client
-// delegate.
+// ClienTransportFactory is a factory which creates a ClientTransport.
 type ClienTransportFactory[T any] interface {
 	New() (ClienTransport[T], error)
 }
 
-// ClienTransport is a transport for the client delegate.
+// ClienTransport is a transport for the client Delegate.
 //
 // It is used by the delegate to send commands and receive results.
 type ClienTransport[T any] interface {
@@ -41,22 +40,22 @@ type ClienTransport[T any] interface {
 	ApplyServerSettings(settings ServerSettings)
 }
 
-// ServerTransportFactory is a factory which creates a transport for the
-// server delegate.
+// ServerTransportFactory is a factory which creates a Transport for the
+// server Delegate.
 type ServerTransportFactory[T any] interface {
 	New(conn net.Conn) ServerTransport[T]
 }
 
-// ServerTransport is a transport for the server delegate.
+// ServerTransport is a transport for the server Delegate.
 //
-// It is used by the delegate to receive commands and send results.
+// It is used by the Delegate to receive commands and send results.
 type ServerTransport[T any] interface {
 	Transport[base.Result, base.Cmd[T]]
 	SendServerInfo(info ServerInfo) error
 	SendServerSettings(settings ServerSettings) error
 }
 
-// ServerTransportHandler handles the server transport.
+// ServerTransportHandler handles the ServerTransport.
 //
 // It receives, executes commands and sends back results.
 type ServerTransportHandler[T any] interface {
