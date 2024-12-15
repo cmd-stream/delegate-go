@@ -26,6 +26,3 @@ receives the `Pong` result, both of which are transmitted as a 0 (like a ball)
 byte. `ReconnectDelegate` is an implementation of the `base.ClientReconnectDelegate`
 interface, it has a `Reconnect` method that should be used by the client if the 
 connection to the server has been lost.
-
-# Tests
-Test coverage is about 93%.
