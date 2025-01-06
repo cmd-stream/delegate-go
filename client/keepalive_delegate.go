@@ -84,6 +84,9 @@ func keepalive[T any](d KeepaliveDelegate[T]) {
 }
 
 func ping[T any](seq base.Seq, d KeepaliveDelegate[T]) (err error) {
+	if err = d.SetSendDeadline(time.Time{}); err != nil {
+		return
+	}
 	if err = d.Send(seq, delegate.PingCmd[T]{}); err != nil {
 		return
 	}

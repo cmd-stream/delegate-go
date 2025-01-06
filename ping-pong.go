@@ -11,7 +11,7 @@ type PingCmd[T any] struct{}
 
 func (c PingCmd[T]) Exec(ctx context.Context, at time.Time, seq base.Seq,
 	receiver T, proxy base.Proxy) error {
-	return proxy.Send(seq, PongResult{})
+	return proxy.SendWithDeadline(time.Time{}, seq, PongResult{})
 }
 
 type PongResult struct{}
