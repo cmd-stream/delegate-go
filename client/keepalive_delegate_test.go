@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -65,7 +66,16 @@ func TestKeepaliveDelegate(t *testing.T) {
 					KeepaliveTime:  2 * 200 * time.Millisecond,
 					KeepaliveIntvl: 200 * time.Millisecond,
 				}
-				d = mock.NewClientDelegate().RegisterSend(
+				d = mock.NewClientDelegate().RegisterNSetSendDeadline(2,
+					func(deadline time.Time) (err error) {
+						wantTime := time.Time{}
+						if !SameTime(wantTime, deadline) {
+							t.Errorf("unexpected dealine, want '%v' actual '%v'", wantTime,
+								deadline)
+						}
+						return
+					},
+				).RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 						var (
 							wantTime   = start.Add(conf.KeepaliveTime)
@@ -116,6 +126,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 				mocks = []*mok.Mock{d.Mock}
 				dlgt  = NewKeepalive[any](conf, d)
 			)
+			dlgt.Keepalive(&sync.Mutex{})
 			select {
 			case <-done:
 			case <-time.NewTimer(conf.KeepaliveTime + conf.KeepaliveIntvl + time.Second).C:
@@ -141,6 +152,15 @@ func TestKeepaliveDelegate(t *testing.T) {
 			}
 			d = mock.NewClientDelegate().RegisterFlush(
 				func() (err error) { return nil },
+			).RegisterSetSendDeadline(
+				func(deadline time.Time) (err error) {
+					wantTime := time.Time{}
+					if !SameTime(wantTime, deadline) {
+						t.Errorf("unexpected dealine, want '%v' actual '%v'", wantTime,
+							deadline)
+					}
+					return
+				},
 			).RegisterSend(
 				func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 					var (
@@ -161,6 +181,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			mocks = []*mok.Mock{d.Mock}
 			dlgt  = NewKeepalive[any](conf, d)
 		)
+		dlgt.Keepalive(&sync.Mutex{})
 		time.Sleep(flushDelay)
 		if err := dlgt.Flush(); err != nil {
 			t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
@@ -206,6 +227,8 @@ func TestKeepaliveDelegate(t *testing.T) {
 				wantErr = errors.New("close error")
 				d       = mock.NewClientDelegate().RegisterClose(
 					func() (err error) { return wantErr },
+				).RegisterSetSendDeadline(
+					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) { return nil },
 				).RegisterFlush(
@@ -220,6 +243,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 				mocks = []*mok.Mock{d.Mock}
 				dlgt  = NewKeepalive[any](conf, d)
 			)
+			dlgt.Keepalive(&sync.Mutex{})
 			if err := dlgt.Close(); err != wantErr {
 				t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
 			}
@@ -240,7 +264,9 @@ func TestKeepaliveDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				done = make(chan struct{})
-				d    = mock.NewClientDelegate().RegisterSend(
+				d    = mock.NewClientDelegate().RegisterSetSendDeadline(
+					func(deadline time.Time) (err error) { return nil },
+				).RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 						defer close(done)
 						return errors.New("send error")
@@ -255,6 +281,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 				mocks = []*mok.Mock{d.Mock}
 				dlgt  = NewKeepalive[any](conf, d)
 			)
+			dlgt.Keepalive(&sync.Mutex{})
 			select {
 			case <-done:
 			case <-time.NewTimer(time.Second).C:
@@ -275,6 +302,8 @@ func TestKeepaliveDelegate(t *testing.T) {
 				wantErr = errors.New("flush error")
 				d       = mock.NewClientDelegate().RegisterFlush(
 					func() (err error) { return wantErr },
+				).RegisterSetSendDeadline(
+					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 						defer close(done)
@@ -292,6 +321,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 				mocks = []*mok.Mock{d.Mock}
 				dlgt  = NewKeepalive[any](conf, d)
 			)
+			dlgt.Keepalive(&sync.Mutex{})
 			if err := dlgt.Flush(); err != wantErr {
 				t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
 			}

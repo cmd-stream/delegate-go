@@ -1,6 +1,7 @@
 package client
 
 import (
+	"sync"
 	"time"
 
 	"github.com/cmd-stream/base-go"
@@ -8,16 +9,21 @@ import (
 )
 
 // NewKeepalive creates a new KeepaliveDelegate.
-func NewKeepalive[T any](conf Conf,
-	d base.ClientDelegate[T]) KeepaliveDelegate[T] {
-	dlgt := KeepaliveDelegate[T]{
+func NewKeepalive[T any](conf Conf, d base.ClientDelegate[T]) KeepaliveDelegate[T] {
+	return KeepaliveDelegate[T]{
 		ClientDelegate: d,
 		conf:           conf,
 		alive:          make(chan struct{}),
 		done:           make(chan struct{}),
 	}
-	go keepalive[T](dlgt)
-	return dlgt
+	// dlgt := KeepaliveDelegate[T]{
+	// 	ClientDelegate: d,
+	// 	conf:           conf,
+	// 	alive:          make(chan struct{}),
+	// 	done:           make(chan struct{}),
+	// }
+	// go keepalive[T](dlgt)
+	// return dlgt
 }
 
 // KeepaliveDelegate is an implementation of the base.ClientDelegate interface.
@@ -65,14 +71,18 @@ func (d KeepaliveDelegate[T]) Close() (err error) {
 	return
 }
 
-func keepalive[T any](d KeepaliveDelegate[T]) {
+func (d KeepaliveDelegate[T]) Keepalive(muSn *sync.Mutex) {
+	go keepalive[T](d, muSn)
+}
+
+func keepalive[T any](d KeepaliveDelegate[T], muSn *sync.Mutex) {
 	timer := time.NewTimer(d.conf.KeepaliveTime)
 	for {
 		select {
 		case <-d.done:
 			return
 		case <-timer.C:
-			ping(0, d) // nothing to do if ping returns an error
+			ping(muSn, 0, d) // nothing to do if ping returns an error, TODO
 			timer.Reset(d.conf.KeepaliveIntvl)
 		case <-d.alive:
 			if !timer.Stop() {
@@ -83,12 +93,16 @@ func keepalive[T any](d KeepaliveDelegate[T]) {
 	}
 }
 
-func ping[T any](seq base.Seq, d KeepaliveDelegate[T]) (err error) {
+func ping[T any](muSn *sync.Mutex, seq base.Seq, d KeepaliveDelegate[T]) (err error) {
+	muSn.Lock()
 	if err = d.SetSendDeadline(time.Time{}); err != nil {
+		muSn.Unlock()
 		return
 	}
 	if err = d.Send(seq, delegate.PingCmd[T]{}); err != nil {
+		muSn.Unlock()
 		return
 	}
+	muSn.Unlock()
 	return d.ClientDelegate.Flush()
 }
