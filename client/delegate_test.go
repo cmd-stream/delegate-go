@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/cmd-stream/base-go"
-	base_mock "github.com/cmd-stream/base-go/testdata/mock"
+	bmock "github.com/cmd-stream/base-go/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
 	"github.com/cmd-stream/delegate-go/testdata/mock"
 	"github.com/ymz-ncnk/mok"
@@ -21,7 +21,7 @@ func TestDelegate(t *testing.T) {
 
 	var (
 		conf = Conf{
-			SysDataReceiveTimeout: 0,
+			SysDataReceiveDuration: 0,
 		}
 		serverInfo     = delegate.ServerInfo([]byte("server info"))
 		serverSettings = delegate.ServerSettings{MaxCmdSize: 500}
@@ -31,7 +31,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   error = nil
-				conn            = base_mock.NewConn()
+				conn            = bmock.NewConn()
 				transport       = MakeClientTransport(time.Now(), serverInfo,
 					200*time.Millisecond,
 					serverSettings,
@@ -143,15 +143,15 @@ func TestDelegate(t *testing.T) {
 			testDelegateCreation(conf, serverInfo, transport, wantErr, mocks, t)
 		})
 
-	t.Run("New should apply Conf.SysDataReceiveTimeout", func(t *testing.T) {
+	t.Run("New should apply Conf.SysDataReceiveDuration", func(t *testing.T) {
 		var (
 			conf = Conf{
-				SysDataReceiveTimeout: time.Second,
+				SysDataReceiveDuration: time.Second,
 			}
 			startTime = time.Now()
 			transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
 				func(deadline time.Time) (err error) {
-					wantDeadline := startTime.Add(conf.SysDataReceiveTimeout)
+					wantDeadline := startTime.Add(conf.SysDataReceiveDuration)
 					if !SameTime(deadline, wantDeadline) {
 						err = fmt.Errorf("unexpected deadline, want '%v' actual '%v'",
 							wantDeadline,
@@ -165,7 +165,7 @@ func TestDelegate(t *testing.T) {
 				},
 			).RegisterSetReceiveDeadline(
 				func(deadline time.Time) (err error) {
-					wantDeadline := startTime.Add(conf.SysDataReceiveTimeout)
+					wantDeadline := startTime.Add(conf.SysDataReceiveDuration)
 					if !SameTime(deadline, wantDeadline) {
 						err = fmt.Errorf("unexpected deadline, want '%v' actual '%v'",
 							wantDeadline,
@@ -228,7 +228,7 @@ func TestDelegate(t *testing.T) {
 				)
 				delegate = Delegate[any]{transport: transport}
 			)
-			err := delegate.Send(1, base_mock.NewCmd())
+			err := delegate.Send(1, bmock.NewCmd())
 			if err != wantErr {
 				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
 			}
@@ -238,7 +238,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantSeq   base.Seq = 1
-				wantCmd            = base_mock.NewCmd()
+				wantCmd            = bmock.NewCmd()
 				transport          = mock.NewClienTransport().RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 						if seq != wantSeq {
@@ -268,7 +268,7 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantErr             = errors.New("receive failed")
 				wantSeq    base.Seq = 1
-				wantResult          = base_mock.NewResult()
+				wantResult          = bmock.NewResult()
 				transport           = mock.NewClienTransport().RegisterReceive(
 					func() (seq base.Seq, r base.Result, err error) {
 						return wantSeq, wantResult, wantErr

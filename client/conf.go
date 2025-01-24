@@ -2,15 +2,17 @@ package client
 
 import "time"
 
-// Conf is a Delegate configuration.
+// Conf configures the Delegate.
 //
-// SysDataReceiveTimeout specifies how long the client will wait for the server
-// system data, if == 0, waits forever.
-// KeepaliveTime - if the client has not sent any commands during this time, it
-// will start sending Ping commands to the server.
-// KeepaliveIntvl sets the time interval between Ping commands.
+//   - SysDataReceiveDuration specifies how long the client will wait for the
+//     server's system data. If set to 0, the client will wait indefinitely.
+//   - KeepaliveTime defines the period of inactivity after which the client
+//     will start sending Ping Commands to the server if no Commands have been
+//     sent.
+//   - KeepaliveIntvl sets the time interval between consecutive Ping Commands
+//     sent by the client.
 type Conf struct {
-	SysDataReceiveTimeout time.Duration
-	KeepaliveTime         time.Duration
-	KeepaliveIntvl        time.Duration
+	SysDataReceiveDuration time.Duration
+	KeepaliveTime          time.Duration
+	KeepaliveIntvl         time.Duration
 }

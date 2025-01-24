@@ -7,7 +7,7 @@ import (
 	"github.com/mus-format/mus-stream-go/varint"
 )
 
-// ServerInfo is designed to help the client recognize a compatible server.
+// ServerInfo helps the client identify a compatible server.
 type ServerInfo []byte
 
 // MarshalServerInfoMUS marshals a ServerInfo to the MUS format.
@@ -29,10 +29,10 @@ func SizeServerInfoMUS(info ServerInfo) (size int) {
 	return ord.SizeSlice[byte](info, nil, muss.SizerFn[byte](raw.SizeByte))
 }
 
-// ServerSettings are the settings that the server sends to the client.
+// ServerSettings are sent by the server to the client.
 //
-// MaxCmdSize specifies the maximum command size, if <= 0, the size is
-// unlimited.
+// MaxCmdSize specifies the maximum allowed Сommand size. If it's <= 0, the size
+// is unlimited.
 type ServerSettings struct {
 	MaxCmdSize int
 }

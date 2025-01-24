@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	base_mock "github.com/cmd-stream/base-go/testdata/mock"
+	bmock "github.com/cmd-stream/base-go/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
 	"github.com/cmd-stream/delegate-go/testdata/mock"
 	"github.com/ymz-ncnk/mok"
@@ -22,7 +22,7 @@ func TestDelegate(t *testing.T) {
 
 	var (
 		conf = Conf{
-			SysDataSendTimeout: time.Second,
+			SysDataSendDuration: time.Second,
 		}
 		serverInfo     = delegate.ServerInfo([]byte("server info"))
 		serverSettings = delegate.ServerSettings{MaxCmdSize: 500}
@@ -46,7 +46,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("send ServerInfo error")
-				conn      = base_mock.NewConn()
+				conn      = bmock.NewConn()
 				transport = mock.NewServerTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSendServerInfo(
@@ -67,7 +67,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("send ServerSettings error")
-				conn      = base_mock.NewConn()
+				conn      = bmock.NewConn()
 				transport = mock.NewServerTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSendServerInfo(
@@ -93,12 +93,12 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("done")
-				conn      = base_mock.NewConn()
+				conn      = bmock.NewConn()
 				transport = MakeServerTransport(time.Now(), serverInfo,
 					200*time.Millisecond,
 					serverSettings,
 					0,
-					conf.SysDataSendTimeout)
+					conf.SysDataSendDuration)
 				transportFactory = MakeServerTransportFactory(conn,
 					transport, t)
 				transportHandler = mock.NewTransportHandler().RegisterHandle(
@@ -120,7 +120,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("SendServerInfo error")
-				conn      = base_mock.NewConn()
+				conn      = bmock.NewConn()
 				transport = mock.NewServerTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return wantErr },
 				).RegisterClose(
@@ -139,7 +139,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("SendServerSettings error")
-				conn      = base_mock.NewConn()
+				conn      = bmock.NewConn()
 				transport = mock.NewServerTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSendServerInfo(
@@ -182,11 +182,11 @@ func MakeServerTransport(startTime time.Time, info delegate.ServerInfo,
 	infoDelay time.Duration,
 	settings delegate.ServerSettings,
 	settingsDelay time.Duration,
-	SysDataSendTimeout time.Duration,
+	SysDataSendDuration time.Duration,
 ) mock.ServerTransport {
 	return mock.NewServerTransport().RegisterSetSendDeadline(
 		func(deadline time.Time) (err error) {
-			wantDeadline := startTime.Add(SysDataSendTimeout)
+			wantDeadline := startTime.Add(SysDataSendDuration)
 			if !SameTime(deadline, wantDeadline) {
 				return fmt.Errorf("ServerTransport.SendServerInfo(), unepxected deadline, want '%v' actual '%v'",
 					wantDeadline,
@@ -204,7 +204,7 @@ func MakeServerTransport(startTime time.Time, info delegate.ServerInfo,
 		},
 	).RegisterSetSendDeadline(
 		func(deadline time.Time) (err error) {
-			wantDeadline := startTime.Add(SysDataSendTimeout)
+			wantDeadline := startTime.Add(SysDataSendDuration)
 			if !SameTime(wantDeadline, deadline) {
 				return fmt.Errorf("ServerTransport.SendServerSettings(), unepxected deadline, want '%v' actual '%v'",
 					wantDeadline,
@@ -223,7 +223,7 @@ func MakeServerTransport(startTime time.Time, info delegate.ServerInfo,
 	)
 }
 
-func testDelegate[T any](ctx context.Context, conn base_mock.Conn,
+func testDelegate[T any](ctx context.Context, conn bmock.Conn,
 	Delegate Delegate[T],
 	wantErr error,
 	mocks []*mok.Mock,

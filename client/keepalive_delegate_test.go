@@ -55,7 +55,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 		}
 	})
 
-	t.Run("KeepaliveDelegate should send Ping commands if no commands was send",
+	t.Run("KeepaliveDelegate should send Ping Commands if no Commands was send",
 		func(t *testing.T) {
 			var (
 				done    = make(chan struct{})

@@ -2,10 +2,10 @@ package server
 
 import "time"
 
-// Conf is a Delegate configuration.
+// Conf configures the Delegate.
 //
-// SysDataSendTimeout determines how long the server will try to send system
-// data to the client, if == 0, waits forever.
+// SysDataSendDuration determines how long the server will try to send system
+// data to the client. If == 0, it wait try forever.
 type Conf struct {
-	SysDataSendTimeout time.Duration
+	SysDataSendDuration time.Duration
 }

@@ -56,8 +56,8 @@ func (h Delegate[T]) Handle(ctx context.Context, conn net.Conn) (
 
 func (h Delegate[T]) sendServerInfo(transport delegate.ServerTransport[T]) (
 	err error) {
-	if h.conf.SysDataSendTimeout != 0 {
-		deadline := time.Now().Add(h.conf.SysDataSendTimeout)
+	if h.conf.SysDataSendDuration != 0 {
+		deadline := time.Now().Add(h.conf.SysDataSendDuration)
 		if err = transport.SetSendDeadline(deadline); err != nil {
 			return
 		}
@@ -67,8 +67,8 @@ func (h Delegate[T]) sendServerInfo(transport delegate.ServerTransport[T]) (
 
 func (h Delegate[T]) sendServerSettings(transport delegate.ServerTransport[T]) (
 	err error) {
-	if h.conf.SysDataSendTimeout != 0 {
-		deadline := time.Now().Add(h.conf.SysDataSendTimeout)
+	if h.conf.SysDataSendDuration != 0 {
+		deadline := time.Now().Add(h.conf.SysDataSendDuration)
 		if err = transport.SetSendDeadline(deadline); err != nil {
 			return
 		}

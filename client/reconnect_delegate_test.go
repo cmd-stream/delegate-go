@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/cmd-stream/base-go"
-	base_client "github.com/cmd-stream/base-go/client"
-	base_mock "github.com/cmd-stream/base-go/testdata/mock"
+	bcln "github.com/cmd-stream/base-go/client"
+	bmock "github.com/cmd-stream/base-go/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
 	"github.com/cmd-stream/delegate-go/testdata/mock"
 	"github.com/ymz-ncnk/mok"
@@ -21,7 +21,7 @@ func TestReconnectDelegate(t *testing.T) {
 
 	var (
 		conf = Conf{
-			SysDataReceiveTimeout: 0,
+			SysDataReceiveDuration: 0,
 		}
 		serverInfo     = delegate.ServerInfo([]byte("server info"))
 		serverSettings = delegate.ServerSettings{MaxCmdSize: 500}
@@ -156,7 +156,7 @@ func TestReconnectDelegate(t *testing.T) {
 	t.Run("Reconnect should return ErrClosed, if the delegate is closed",
 		func(t *testing.T) {
 			var (
-				wantErr    = base_client.ErrClosed
+				wantErr    = bcln.ErrClosed
 				transport1 = MakeClientTransport(time.Now(), serverInfo,
 					200*time.Millisecond,
 					serverSettings,
@@ -208,7 +208,7 @@ func TestReconnectDelegate(t *testing.T) {
 				mocks    = []*mok.Mock{transport.Load().(mock.ClienTransport).Mock}
 				delegate = ReconnectDelegate[any]{transport: transport}
 			)
-			err := delegate.Send(1, base_mock.NewCmd())
+			err := delegate.Send(1, bmock.NewCmd())
 			if err != wantErr {
 				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
 			}
@@ -221,7 +221,7 @@ func TestReconnectDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantSeq   base.Seq = 1
-				wantCmd            = base_mock.NewCmd()
+				wantCmd            = bmock.NewCmd()
 				transport          = func() (transport atomic.Value) {
 					transport.Store(mock.NewClienTransport().RegisterSend(
 						func(seq base.Seq, cmd base.Cmd[any]) (err error) {
@@ -254,7 +254,7 @@ func TestReconnectDelegate(t *testing.T) {
 			var (
 				wantErr             = errors.New("receive failed")
 				wantSeq    base.Seq = 1
-				wantResult          = base_mock.NewResult()
+				wantResult          = bmock.NewResult()
 				transport           = func() (transport atomic.Value) {
 					transport.Store(mock.NewClienTransport().RegisterReceive(
 						func() (seq base.Seq, r base.Result, err error) {
@@ -471,7 +471,7 @@ func TestReconnectDelegate(t *testing.T) {
 	t.Run("If ServerInfo check fails with an error, Reconnect should try again",
 		func(t *testing.T) {
 			var (
-				wantErr        = base_client.ErrClosed
+				wantErr        = bcln.ErrClosed
 				closeFlag      uint32
 				val, transport = func() (val atomic.Value, transport mock.ClienTransport) {
 					transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
@@ -503,7 +503,7 @@ func TestReconnectDelegate(t *testing.T) {
 	t.Run("If ServerSettings apply fails with an error, Reconnect should try again",
 		func(t *testing.T) {
 			var (
-				wantErr        = base_client.ErrClosed
+				wantErr        = bcln.ErrClosed
 				closeFlag      uint32
 				val, transport = func() (val atomic.Value, transport mock.ClienTransport) {
 					transport = mock.NewClienTransport().RegisterSetReceiveDeadline(

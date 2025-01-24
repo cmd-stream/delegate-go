@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cmd-stream/base-go"
-	base_client "github.com/cmd-stream/base-go/client"
+	bcln "github.com/cmd-stream/base-go/client"
 	"github.com/cmd-stream/delegate-go"
 )
 
@@ -18,11 +18,11 @@ func NewReconnect[T any](conf Conf, info delegate.ServerInfo,
 	if err != nil {
 		return
 	}
-	err = checkServerInfo(conf.SysDataReceiveTimeout, transport, info)
+	err = checkServerInfo(conf.SysDataReceiveDuration, transport, info)
 	if err != nil {
 		return
 	}
-	err = applyServerSettings(conf.SysDataReceiveTimeout, transport)
+	err = applyServerSettings(conf.SysDataReceiveDuration, transport)
 	if err != nil {
 		return
 	}
@@ -96,7 +96,7 @@ func (d *ReconnectDelegate[T]) Reconnect() (err error) {
 Start:
 	for {
 		if d.closed() {
-			return base_client.ErrClosed
+			return bcln.ErrClosed
 		}
 		transport, err = d.factory.New()
 		if err != nil {
@@ -104,14 +104,14 @@ Start:
 		}
 		break
 	}
-	err = checkServerInfo(d.conf.SysDataReceiveTimeout, transport, d.info)
+	err = checkServerInfo(d.conf.SysDataReceiveDuration, transport, d.info)
 	if err != nil {
 		if err == ErrServerInfoMismatch {
 			return
 		}
 		goto Start
 	}
-	err = applyServerSettings(d.conf.SysDataReceiveTimeout, transport)
+	err = applyServerSettings(d.conf.SysDataReceiveDuration, transport)
 	if err != nil {
 		goto Start
 	}
