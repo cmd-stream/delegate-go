@@ -3,7 +3,7 @@ module github.com/cmd-stream/delegate-go
 go 1.20
 
 require (
-	github.com/cmd-stream/base-go v0.0.0-20250124163536-dea04b357f3a
+	github.com/cmd-stream/base-go v0.0.0-20250126204318-04ae7366853d
 	github.com/mus-format/mus-stream-go v0.4.3
 	github.com/ymz-ncnk/mok v0.2.0
 )
