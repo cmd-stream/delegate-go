@@ -10,12 +10,9 @@ It includes implementations of the `base.ClientDelegate` and `base.ServerDelegat
 interfaces, each of which relies on an abstract transport for data delivery.
 
 This module allows the server to initialize the client connection by sending
-system data: `ServerInfo` and `ServerSettings`. The `ServerInfo` is actually a
-slice of bytes, that may denote, for example a set of supported Commands. If the 
-client's `ServerInfo` does not match the one received from the server, client 
-creation will fail with an error. The `ServerSettings` defines the maximum 
-Command size supported by the server, which can be used by the client to 
-validate Commands before sending them.
+`ServerInfo` - a slice of bytes, that may denote, for example a set of supported 
+Commands. If the client's `ServerInfo` does not match the one received from the 
+server, client creation will fail with an error.
 
 Also in the `client` package you can find `KeepaliveDelegate` and 
 `ReconnectDelegate`. `KeepaliveDelegate` starts playing the Ping-Pong game with 

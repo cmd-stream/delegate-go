@@ -96,12 +96,6 @@ func (mock ServerTransport) RegisterSendServerInfo(
 	return mock
 }
 
-func (mock ServerTransport) RegisterSendServerSettings(
-	fn func(settings delegate.ServerSettings) (err error)) ServerTransport {
-	mock.Register("SendServerSettings", fn)
-	return mock
-}
-
 func (mock ServerTransport) LocalAddr() (addr net.Addr) {
 	vals, err := mock.Call("LocalAddr")
 	if err != nil {
@@ -122,16 +116,6 @@ func (mock ServerTransport) RemoteAddr() (addr net.Addr) {
 
 func (mock ServerTransport) SendServerInfo(info delegate.ServerInfo) (err error) {
 	vals, err := mock.Call("SendServerInfo", info)
-	if err != nil {
-		panic(err)
-	}
-	err, _ = vals[0].(error)
-	return
-}
-
-func (mock ServerTransport) SendServerSettings(settings delegate.ServerSettings) (
-	err error) {
-	vals, err := mock.Call("SendServerSettings", settings)
 	if err != nil {
 		panic(err)
 	}

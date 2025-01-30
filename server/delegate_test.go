@@ -24,8 +24,7 @@ func TestDelegate(t *testing.T) {
 		conf = Conf{
 			SysDataSendDuration: time.Second,
 		}
-		serverInfo     = delegate.ServerInfo([]byte("server info"))
-		serverSettings = delegate.ServerSettings{MaxCmdSize: 500}
+		serverInfo = delegate.ServerInfo([]byte("server info"))
 	)
 
 	t.Run("If ServerInfo len is zero, New should panic",
@@ -39,7 +38,7 @@ func TestDelegate(t *testing.T) {
 					}
 				}
 			}()
-			New[any](conf, nil, serverSettings, nil, nil)
+			New[any](conf, nil, nil, nil)
 		})
 
 	t.Run("If send ServerInfo fails with an error, Handle should return it",
@@ -55,36 +54,9 @@ func TestDelegate(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				transportFactory = MakeServerTransportFactory(conn, transport, t)
-				handler          = New[any](conf, serverInfo, serverSettings,
-					transportFactory,
-					nil)
-				mocks = []*mok.Mock{conn.Mock, transport.Mock, transportFactory.Mock}
-			)
-			testDelegate(context.Background(), conn, handler, wantErr, mocks, t)
-		})
-
-	t.Run("If send ServerSettings fails with an error, Handle should return it",
-		func(t *testing.T) {
-			var (
-				wantErr   = errors.New("send ServerSettings error")
-				conn      = bmock.NewConn()
-				transport = mock.NewServerTransport().RegisterSetSendDeadline(
-					func(deadline time.Time) (err error) { return nil },
-				).RegisterSendServerInfo(
-					func(info delegate.ServerInfo) (err error) { return nil },
-				).RegisterSetSendDeadline(
-					func(deadline time.Time) (err error) { return nil },
-				).RegisterSendServerSettings(
-					func(settings delegate.ServerSettings) (err error) { return wantErr },
-				).RegisterClose(
-					func() (err error) { return nil },
-				)
-				transportFactory = MakeServerTransportFactory(conn, transport,
-					t)
-				handler = New[any](conf, serverInfo, serverSettings,
-					transportFactory,
-					nil)
-				mocks = []*mok.Mock{conn.Mock, transport.Mock, transportFactory.Mock}
+				handler          = New[any](conf, serverInfo, transportFactory, nil)
+				mocks            = []*mok.Mock{conn.Mock, transport.Mock,
+					transportFactory.Mock}
 			)
 			testDelegate(context.Background(), conn, handler, wantErr, mocks, t)
 		})
@@ -96,7 +68,6 @@ func TestDelegate(t *testing.T) {
 				conn      = bmock.NewConn()
 				transport = MakeServerTransport(time.Now(), serverInfo,
 					200*time.Millisecond,
-					serverSettings,
 					0,
 					conf.SysDataSendDuration)
 				transportFactory = MakeServerTransportFactory(conn,
@@ -106,11 +77,8 @@ func TestDelegate(t *testing.T) {
 						return wantErr
 					},
 				)
-				handler = New[any](conf, serverInfo,
-					serverSettings,
-					transportFactory,
-					transportHandler)
-				mocks = []*mok.Mock{conn.Mock, transport.Mock, transportFactory.Mock,
+				handler = New[any](conf, serverInfo, transportFactory, transportHandler)
+				mocks   = []*mok.Mock{conn.Mock, transport.Mock, transportFactory.Mock,
 					transportHandler.Mock}
 			)
 			testDelegate(context.Background(), conn, handler, wantErr, mocks, t)
@@ -122,29 +90,6 @@ func TestDelegate(t *testing.T) {
 				wantErr   = errors.New("SendServerInfo error")
 				conn      = bmock.NewConn()
 				transport = mock.NewServerTransport().RegisterSetSendDeadline(
-					func(deadline time.Time) (err error) { return wantErr },
-				).RegisterClose(
-					func() (err error) { return nil },
-				)
-				factory = MakeServerTransportFactory(conn, transport, t)
-				handler = Delegate[any]{conf: conf, factory: factory}
-				err     = handler.Handle(context.Background(), conn)
-			)
-			if err != wantErr {
-				t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
-			}
-		})
-
-	t.Run("If Transport.SetSendDeadline fails with an error on ServerSettings send, Handle should return it",
-		func(t *testing.T) {
-			var (
-				wantErr   = errors.New("SendServerSettings error")
-				conn      = bmock.NewConn()
-				transport = mock.NewServerTransport().RegisterSetSendDeadline(
-					func(deadline time.Time) (err error) { return nil },
-				).RegisterSendServerInfo(
-					func(info delegate.ServerInfo) (err error) { return nil },
-				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return wantErr },
 				).RegisterClose(
 					func() (err error) { return nil },
@@ -180,7 +125,6 @@ func MakeServerTransportFactory(conn net.Conn,
 
 func MakeServerTransport(startTime time.Time, info delegate.ServerInfo,
 	infoDelay time.Duration,
-	settings delegate.ServerSettings,
 	settingsDelay time.Duration,
 	SysDataSendDuration time.Duration,
 ) mock.ServerTransport {
@@ -199,24 +143,6 @@ func MakeServerTransport(startTime time.Time, info delegate.ServerInfo,
 			if !bytes.Equal(i, info) {
 				return fmt.Errorf("ServerTransport.SendServerInfo(), unexpected info, want '%v' actual '%v'",
 					info, i)
-			}
-			return nil
-		},
-	).RegisterSetSendDeadline(
-		func(deadline time.Time) (err error) {
-			wantDeadline := startTime.Add(SysDataSendDuration)
-			if !SameTime(wantDeadline, deadline) {
-				return fmt.Errorf("ServerTransport.SendServerSettings(), unepxected deadline, want '%v' actual '%v'",
-					wantDeadline,
-					deadline)
-			}
-			return nil
-		},
-	).RegisterSendServerSettings(
-		func(s delegate.ServerSettings) (error error) {
-			if !reflect.DeepEqual(s, settings) {
-				return fmt.Errorf("ServerTransport.SendServerSettings(), unexpected settings, want '%v' actual '%v'",
-					settings, s)
 			}
 			return nil
 		},

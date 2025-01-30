@@ -11,18 +11,13 @@ import (
 
 // New creates a new Delegate.
 //
-// When created, the Delegate expects to receive system data (ServerInfo and
-// ServerSettings) from the server.
+// When created, the Delegate expects to receive ServerInfo from the server.
 //
 // Returns ErrServerInfoMismatch if the received ServerInfo does not match
 // the specified one.
 func New[T any](conf Conf, info delegate.ServerInfo,
 	transport delegate.ClienTransport[T]) (delegate Delegate[T], err error) {
 	err = checkServerInfo(conf.SysDataReceiveDuration, transport, info)
-	if err != nil {
-		return
-	}
-	err = applyServerSettings(conf.SysDataReceiveDuration, transport)
 	if err != nil {
 		return
 	}
@@ -87,20 +82,6 @@ func checkServerInfo[T any](timeout time.Duration,
 	if !bytes.Equal(info, wantInfo) {
 		return ErrServerInfoMismatch
 	}
-	return
-}
-
-func applyServerSettings[T any](timeout time.Duration,
-	transport delegate.ClienTransport[T]) (err error) {
-	err = transport.SetReceiveDeadline(calcDeadline(timeout))
-	if err != nil {
-		return
-	}
-	settings, err := transport.ReceiveServerSettings()
-	if err != nil {
-		return
-	}
-	transport.ApplyServerSettings(settings)
 	return transport.SetReceiveDeadline(time.Time{})
 }
 

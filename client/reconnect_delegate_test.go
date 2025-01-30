@@ -23,17 +23,15 @@ func TestReconnectDelegate(t *testing.T) {
 		conf = Conf{
 			SysDataReceiveDuration: 0,
 		}
-		serverInfo     = delegate.ServerInfo([]byte("server info"))
-		serverSettings = delegate.ServerSettings{MaxCmdSize: 500}
+		serverInfo = delegate.ServerInfo([]byte("server info"))
 	)
 
-	t.Run("NewReconnect should check ServerInfo and ServerSettings",
+	t.Run("NewReconnect should check ServerInfo",
 		func(t *testing.T) {
 			var (
 				wantErr   error = nil
 				transport       = MakeClientTransport(time.Now(), serverInfo,
 					200*time.Millisecond,
-					serverSettings,
 					300*time.Millisecond,
 					time.Second,
 					t)
@@ -67,32 +65,6 @@ func TestReconnectDelegate(t *testing.T) {
 				t)
 		})
 
-	t.Run("If ServerSettings apply fails with an error, NewReconnect should return it",
-		func(t *testing.T) {
-			var (
-				wantErr   error = errors.New("SetReceiveDeadline error")
-				transport       = mock.NewClienTransport().RegisterSetReceiveDeadline(
-					func(deadline time.Time) (err error) {
-						return nil
-					},
-				).RegisterReceiveServerInfo(
-					func() (i delegate.ServerInfo, err error) {
-						return serverInfo, nil
-					},
-				).RegisterSetReceiveDeadline(
-					func(deadline time.Time) (err error) { return wantErr },
-				)
-				factory = mock.NewClienTransportFactory().RegisterNew(
-					func() (delegate.ClienTransport[any], error) {
-						return transport, nil
-					},
-				)
-				mocks = []*mok.Mock{transport.Mock, factory.Mock}
-			)
-			testReconnectDelegateCreation(conf, serverInfo, factory, wantErr, mocks,
-				t)
-		})
-
 	t.Run("If ClientTransportFactory.New fails with an error, NewReconnect should return it",
 		func(t *testing.T) {
 			var (
@@ -112,13 +84,11 @@ func TestReconnectDelegate(t *testing.T) {
 		var (
 			transport1 = MakeClientTransport(time.Now(), serverInfo,
 				200*time.Millisecond,
-				serverSettings,
 				300*time.Millisecond,
 				time.Second,
 				t)
 			wantTransport = MakeClientTransport(time.Now(), serverInfo,
 				200*time.Millisecond,
-				serverSettings,
 				300*time.Millisecond,
 				time.Second,
 				t)
@@ -159,7 +129,6 @@ func TestReconnectDelegate(t *testing.T) {
 				wantErr    = bcln.ErrClosed
 				transport1 = MakeClientTransport(time.Now(), serverInfo,
 					200*time.Millisecond,
-					serverSettings,
 					300*time.Millisecond,
 					time.Second,
 					t).RegisterClose(
@@ -490,47 +459,6 @@ func TestReconnectDelegate(t *testing.T) {
 				)
 				mocks    = []*mok.Mock{transport.Mock}
 				delegate = ReconnectDelegate[any]{transport: val, factory: factory, closedFlag: &closeFlag}
-			)
-			err := delegate.Reconnect()
-			if err != wantErr {
-				t.Errorf("unexpected error, want '%v' actual '%v' ", wantErr, err)
-			}
-			if infomap := mok.CheckCalls(mocks); len(infomap) > 0 {
-				t.Error(infomap)
-			}
-		})
-
-	t.Run("If ServerSettings apply fails with an error, Reconnect should try again",
-		func(t *testing.T) {
-			var (
-				wantErr        = bcln.ErrClosed
-				closeFlag      uint32
-				val, transport = func() (val atomic.Value, transport mock.ClienTransport) {
-					transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
-						func(deadline time.Time) (err error) {
-							return nil
-						},
-					).RegisterReceiveServerInfo(
-						func() (info delegate.ServerInfo, err error) {
-							return serverInfo, nil
-						},
-					).RegisterSetReceiveDeadline(
-						func(deadline time.Time) (err error) {
-							closeFlag = 1
-							return errors.New("SetReceiveDeadline error")
-						},
-					)
-					val.Store(transport)
-					return
-				}()
-				factory = mock.NewClienTransportFactory().RegisterNew(
-					func() (delegate.ClienTransport[any], error) {
-						return transport, nil
-					},
-				)
-				mocks    = []*mok.Mock{transport.Mock}
-				delegate = ReconnectDelegate[any]{info: serverInfo, transport: val,
-					factory: factory, closedFlag: &closeFlag}
 			)
 			err := delegate.Reconnect()
 			if err != wantErr {

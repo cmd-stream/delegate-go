@@ -38,19 +38,6 @@ func (mock ClienTransport) RegisterReceiveServerInfo(
 	return mock
 }
 
-func (mock ClienTransport) RegisterReceiveServerSettings(
-	fn func() (settings delegate.ServerSettings, err error),
-) ClienTransport {
-	mock.Register("ReceiveServerSettings", fn)
-	return mock
-}
-
-func (mock ClienTransport) RegisterApplyServerSettings(
-	fn func(settings delegate.ServerSettings)) ClienTransport {
-	mock.Register("ApplyServerSettings", fn)
-	return mock
-}
-
 func (mock ClienTransport) RegisterSetSendDeadline(
 	fn func(deadline time.Time) (err error)) ClienTransport {
 	mock.Register("SetSendDeadline", fn)
@@ -112,25 +99,6 @@ func (mock ClienTransport) ReceiveServerInfo() (info delegate.ServerInfo, err er
 	info = vals[0].(delegate.ServerInfo)
 	err, _ = vals[1].(error)
 	return
-}
-
-func (mock ClienTransport) ReceiveServerSettings() (
-	info delegate.ServerSettings, err error) {
-	vals, err := mock.Call("ReceiveServerSettings")
-	if err != nil {
-		panic(err)
-	}
-
-	info = vals[0].(delegate.ServerSettings)
-	err, _ = vals[1].(error)
-	return
-}
-
-func (mock ClienTransport) ApplyServerSettings(settings delegate.ServerSettings) {
-	_, err := mock.Call("ApplyServerSettings", settings)
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (mock ClienTransport) SetSendDeadline(deadline time.Time) (err error) {

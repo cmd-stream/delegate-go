@@ -23,18 +23,16 @@ func TestDelegate(t *testing.T) {
 		conf = Conf{
 			SysDataReceiveDuration: 0,
 		}
-		serverInfo     = delegate.ServerInfo([]byte("server info"))
-		serverSettings = delegate.ServerSettings{MaxCmdSize: 500}
+		serverInfo = delegate.ServerInfo([]byte("server info"))
 	)
 
-	t.Run("New should check ServerInfo and ServerSettings",
+	t.Run("New should check ServerInfo",
 		func(t *testing.T) {
 			var (
 				wantErr   error = nil
 				conn            = bmock.NewConn()
 				transport       = MakeClientTransport(time.Now(), serverInfo,
 					200*time.Millisecond,
-					serverSettings,
 					300*time.Millisecond,
 					time.Second,
 					t)
@@ -94,55 +92,6 @@ func TestDelegate(t *testing.T) {
 			testDelegateCreation(conf, serverInfo, transport, wantErr, mocks, t)
 		})
 
-	t.Run("If Transport.SetReceiveDeadline fails with an error before receive ServerSettings, New should return it",
-		func(t *testing.T) {
-			var (
-				wantErr   = errors.New("Transport.SetReceiveDeadline error")
-				transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
-					func(deadline time.Time) (err error) {
-						return nil
-					},
-				).RegisterReceiveServerInfo(
-					func() (info delegate.ServerInfo, err error) {
-						return serverInfo, nil
-					},
-				).RegisterSetReceiveDeadline(
-					func(deadline time.Time) (err error) {
-						return wantErr
-					},
-				)
-				mocks = []*mok.Mock{transport.Mock}
-			)
-			testDelegateCreation(conf, serverInfo, transport, wantErr, mocks, t)
-		})
-
-	t.Run("If Transport.ReceiveServerSettings fails with an error, New should return it",
-		func(t *testing.T) {
-			var (
-				wantErr   = errors.New("Transport.ReceiveServerSettings error")
-				transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
-					func(deadline time.Time) (err error) {
-						return nil
-					},
-				).RegisterReceiveServerInfo(
-					func() (info delegate.ServerInfo, err error) {
-						return serverInfo, nil
-					},
-				).RegisterReceiveServerSettings(
-					func() (settings delegate.ServerSettings, err error) {
-						err = wantErr
-						return
-					},
-				).RegisterSetReceiveDeadline(
-					func(deadline time.Time) (err error) {
-						return nil
-					},
-				)
-				mocks = []*mok.Mock{transport.Mock}
-			)
-			testDelegateCreation(conf, serverInfo, transport, wantErr, mocks, t)
-		})
-
 	t.Run("New should apply Conf.SysDataReceiveDuration", func(t *testing.T) {
 		var (
 			conf = Conf{
@@ -165,52 +114,8 @@ func TestDelegate(t *testing.T) {
 				},
 			).RegisterSetReceiveDeadline(
 				func(deadline time.Time) (err error) {
-					wantDeadline := startTime.Add(conf.SysDataReceiveDuration)
-					if !SameTime(deadline, wantDeadline) {
-						err = fmt.Errorf("unexpected deadline, want '%v' actual '%v'",
-							wantDeadline,
-							deadline)
-					}
 					return
 				},
-			).RegisterSetReceiveDeadline(
-				func(deadline time.Time) (err error) { return nil },
-			).RegisterReceiveServerSettings(
-				func() (settings delegate.ServerSettings, err error) {
-					return serverSettings, nil
-				},
-			).RegisterApplyServerSettings(
-				func(settings delegate.ServerSettings) {},
-			)
-			mocks = []*mok.Mock{transport.Mock}
-		)
-		testDelegateCreation(conf, serverInfo, transport, nil, mocks, t)
-	})
-
-	t.Run("New should call Transport.ApplyServerSettings", func(t *testing.T) {
-		var (
-			transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
-				func(deadline time.Time) (err error) {
-					return
-				},
-			).RegisterReceiveServerInfo(
-				func() (info delegate.ServerInfo, err error) { return serverInfo, nil },
-			).RegisterSetReceiveDeadline(
-				func(deadline time.Time) (err error) { return },
-			).RegisterReceiveServerSettings(
-				func() (settings delegate.ServerSettings, err error) {
-					return serverSettings, nil
-				},
-			).RegisterApplyServerSettings(
-				func(settings delegate.ServerSettings) {
-					if !reflect.DeepEqual(settings, serverSettings) {
-						t.Errorf("unexpected settings, want '%v' actual '%v'",
-							serverSettings,
-							settings)
-					}
-				},
-			).RegisterSetReceiveDeadline(
-				func(deadline time.Time) (err error) { return nil },
 			)
 			mocks = []*mok.Mock{transport.Mock}
 		)
@@ -357,7 +262,6 @@ func SameTime(t1, t2 time.Time) bool {
 
 func MakeClientTransport(startTime time.Time, serverInfo delegate.ServerInfo,
 	infoDelay time.Duration,
-	settings delegate.ServerSettings,
 	settingsDelay time.Duration,
 	sysDataReceiveTimeout time.Duration,
 	t *testing.T,
@@ -373,25 +277,6 @@ func MakeClientTransport(startTime time.Time, serverInfo delegate.ServerInfo,
 	).RegisterSetReceiveDeadline(
 		func(deadline time.Time) (err error) {
 			return nil
-		},
-	).RegisterReceiveServerSettings(
-		func() (s delegate.ServerSettings, err error) {
-			return settings, nil
-		},
-	).RegisterApplyServerSettings(
-		func(s delegate.ServerSettings) {
-			if !reflect.DeepEqual(s, settings) {
-				t.Errorf("unepxected settings, want '%v' actual '%v'", settings, s)
-			}
-		},
-	).RegisterSetReceiveDeadline(
-		func(deadline time.Time) (err error) {
-			if !deadline.IsZero() {
-				return fmt.Errorf("unexpected deadline, want '%v' actual '%v'",
-					time.Time{},
-					deadline)
-			}
-			return
 		},
 	)
 }

@@ -34,8 +34,6 @@ type ClienTransportFactory[T any] interface {
 type ClienTransport[T any] interface {
 	Transport[base.Cmd[T], base.Result]
 	ReceiveServerInfo() (info ServerInfo, err error)
-	ReceiveServerSettings() (settings ServerSettings, err error)
-	ApplyServerSettings(settings ServerSettings)
 }
 
 // ServerTransportFactory is a factory which creates a Transport for the
@@ -50,7 +48,6 @@ type ServerTransportFactory[T any] interface {
 type ServerTransport[T any] interface {
 	Transport[base.Result, base.Cmd[T]]
 	SendServerInfo(info ServerInfo) error
-	SendServerSettings(settings ServerSettings) error
 }
 
 // ServerTransportHandler is a handler of the ServerTransport.

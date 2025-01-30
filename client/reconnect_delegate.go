@@ -22,10 +22,6 @@ func NewReconnect[T any](conf Conf, info delegate.ServerInfo,
 	if err != nil {
 		return
 	}
-	err = applyServerSettings(conf.SysDataReceiveDuration, transport)
-	if err != nil {
-		return
-	}
 	var closedFlag uint32
 	delegate = &ReconnectDelegate[T]{
 		conf:       conf,
@@ -109,10 +105,6 @@ Start:
 		if err == ErrServerInfoMismatch {
 			return
 		}
-		goto Start
-	}
-	err = applyServerSettings(d.conf.SysDataReceiveDuration, transport)
-	if err != nil {
 		goto Start
 	}
 	d.setTransport(transport)
