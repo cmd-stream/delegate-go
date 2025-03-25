@@ -1,4 +1,4 @@
-package client
+package dcln
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	"github.com/cmd-stream/base-go"
 	bmock "github.com/cmd-stream/base-go/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
-	"github.com/cmd-stream/delegate-go/testdata/mock"
+	dmock "github.com/cmd-stream/delegate-go/testdata/mock"
 	"github.com/ymz-ncnk/mok"
 )
 
@@ -20,46 +20,43 @@ const Delta = 100 * time.Millisecond
 func TestDelegate(t *testing.T) {
 
 	var (
-		conf = Conf{
-			SysDataReceiveDuration: 0,
-		}
+		ops        = []SetOption{WithServerInfoReceiveDuration(0)}
 		serverInfo = delegate.ServerInfo([]byte("server info"))
 	)
 
-	t.Run("New should check ServerInfo",
-		func(t *testing.T) {
-			var (
-				wantErr   error = nil
-				conn            = bmock.NewConn()
-				transport       = MakeClientTransport(time.Now(), serverInfo,
-					200*time.Millisecond,
-					300*time.Millisecond,
-					time.Second,
-					t)
-				mocks = []*mok.Mock{conn.Mock, transport.Mock}
-			)
-			testDelegateCreation(conf, serverInfo, transport, wantErr, mocks, t)
-		})
+	t.Run("New should check ServerInfo", func(t *testing.T) {
+		var (
+			wantErr   error = nil
+			conn            = bmock.NewConn()
+			transport       = MakeClientTransport(time.Now(), serverInfo,
+				200*time.Millisecond,
+				300*time.Millisecond,
+				time.Second,
+				t)
+			mocks = []*mok.Mock{conn.Mock, transport.Mock}
+		)
+		testDelegateCreation(serverInfo, transport, ops, wantErr, mocks, t)
+	})
 
 	t.Run("If Transport.SetReceiveDeadline fails with an error before receive ServerInfo, New should return it",
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Transport.SetReceiveDeadline")
-				transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
+				transport = dmock.NewClienTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return wantErr
 					},
 				)
 				mocks = []*mok.Mock{transport.Mock}
 			)
-			testDelegateCreation(conf, serverInfo, transport, wantErr, mocks, t)
+			testDelegateCreation(serverInfo, transport, ops, wantErr, mocks, t)
 		})
 
 	t.Run("If Transport.ReceiveServerInfo fails with an error, New should return it",
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Transport.ReceiveServerInfo error")
-				transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
+				transport = dmock.NewClienTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -70,7 +67,7 @@ func TestDelegate(t *testing.T) {
 				)
 				mocks = []*mok.Mock{transport.Mock}
 			)
-			testDelegateCreation(conf, serverInfo, transport, wantErr, mocks, t)
+			testDelegateCreation(serverInfo, transport, ops, wantErr, mocks, t)
 		})
 
 	t.Run("If wrong ServerInfo was received, New should return error",
@@ -78,7 +75,7 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantErr         = ErrServerInfoMismatch
 				wrongServerInfo = []byte{1}
-				transport       = mock.NewClienTransport().RegisterSetReceiveDeadline(
+				transport       = dmock.NewClienTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -89,18 +86,17 @@ func TestDelegate(t *testing.T) {
 				)
 				mocks = []*mok.Mock{transport.Mock}
 			)
-			testDelegateCreation(conf, serverInfo, transport, wantErr, mocks, t)
+			testDelegateCreation(serverInfo, transport, ops, wantErr, mocks, t)
 		})
 
-	t.Run("New should apply Conf.SysDataReceiveDuration", func(t *testing.T) {
+	t.Run("New should apply Conf.ServerInfoReceiveDuration", func(t *testing.T) {
 		var (
-			conf = Conf{
-				SysDataReceiveDuration: time.Second,
-			}
+			d         = time.Second
+			ops       = []SetOption{WithServerInfoReceiveDuration(d)}
 			startTime = time.Now()
-			transport = mock.NewClienTransport().RegisterSetReceiveDeadline(
+			transport = dmock.NewClienTransport().RegisterSetReceiveDeadline(
 				func(deadline time.Time) (err error) {
-					wantDeadline := startTime.Add(conf.SysDataReceiveDuration)
+					wantDeadline := startTime.Add(d)
 					if !SameTime(deadline, wantDeadline) {
 						err = fmt.Errorf("unexpected deadline, want '%v' actual '%v'",
 							wantDeadline,
@@ -119,14 +115,14 @@ func TestDelegate(t *testing.T) {
 			)
 			mocks = []*mok.Mock{transport.Mock}
 		)
-		testDelegateCreation(conf, serverInfo, transport, nil, mocks, t)
+		testDelegateCreation(serverInfo, transport, ops, nil, mocks, t)
 	})
 
 	t.Run("If Transport.Send fails with an error, Send should return it",
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Delegate.Send error")
-				transport = mock.NewClienTransport().RegisterSend(
+				transport = dmock.NewClienTransport().RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 						return wantErr
 					},
@@ -144,7 +140,7 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantSeq   base.Seq = 1
 				wantCmd            = bmock.NewCmd()
-				transport          = mock.NewClienTransport().RegisterSend(
+				transport          = dmock.NewClienTransport().RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 						if seq != wantSeq {
 							return fmt.Errorf("unexppected seq, want '%v' actual '%v'", wantSeq,
@@ -174,7 +170,7 @@ func TestDelegate(t *testing.T) {
 				wantErr             = errors.New("receive failed")
 				wantSeq    base.Seq = 1
 				wantResult          = bmock.NewResult()
-				transport           = mock.NewClienTransport().RegisterReceive(
+				transport           = dmock.NewClienTransport().RegisterReceive(
 					func() (seq base.Seq, r base.Result, err error) {
 						return wantSeq, wantResult, wantErr
 					},
@@ -196,19 +192,19 @@ func TestDelegate(t *testing.T) {
 	t.Run("Conf should return the conf that was obtained during creation",
 		func(t *testing.T) {
 			var (
-				wantConf = conf
-				delegate = Delegate[any]{conf: wantConf}
+				wantO    = Options{}
+				delegate = Delegate[any]{}
 			)
-			conf := delegate.Conf()
-			if conf != wantConf {
-				t.Errorf("unexpected conf, want '%v' actual '%v'", wantConf, conf)
+			o := delegate.Options()
+			if o != wantO {
+				t.Errorf("unexpected o, want '%v' actual '%v'", wantO, o)
 			}
 		})
 
 	t.Run("LocalAddr should return Transport.LocalAddr", func(t *testing.T) {
 		var (
 			wantAddr  = &net.IPAddr{IP: net.ParseIP("127.0.0.1:9000")}
-			transport = mock.NewClienTransport().RegisterLocalAddr(
+			transport = dmock.NewClienTransport().RegisterLocalAddr(
 				func() (a net.Addr) {
 					return wantAddr
 				},
@@ -224,7 +220,7 @@ func TestDelegate(t *testing.T) {
 	t.Run("RemoteAddr should return Transport.RemoteAddr", func(t *testing.T) {
 		var (
 			wantAddr  = &net.IPAddr{IP: net.ParseIP("127.0.0.1:9000")}
-			transport = mock.NewClienTransport().RegisterRemoteAddr(
+			transport = dmock.NewClienTransport().RegisterRemoteAddr(
 				func() (addr net.Addr) {
 					return wantAddr
 				},
@@ -241,7 +237,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Close error")
-				transport = mock.NewClienTransport().RegisterClose(
+				transport = dmock.NewClienTransport().RegisterClose(
 					func() (err error) {
 						return wantErr
 					},
@@ -263,10 +259,10 @@ func SameTime(t1, t2 time.Time) bool {
 func MakeClientTransport(startTime time.Time, serverInfo delegate.ServerInfo,
 	infoDelay time.Duration,
 	settingsDelay time.Duration,
-	sysDataReceiveTimeout time.Duration,
+	ServerInfoReceiveTimeout time.Duration,
 	t *testing.T,
-) mock.ClienTransport {
-	return mock.NewClienTransport().RegisterSetReceiveDeadline(
+) dmock.ClienTransport {
+	return dmock.NewClienTransport().RegisterSetReceiveDeadline(
 		func(deadline time.Time) (err error) {
 			return nil
 		},
@@ -281,13 +277,14 @@ func MakeClientTransport(startTime time.Time, serverInfo delegate.ServerInfo,
 	)
 }
 
-func testDelegateCreation(conf Conf, serverInfo delegate.ServerInfo,
+func testDelegateCreation(serverInfo delegate.ServerInfo,
 	transport delegate.ClienTransport[any],
+	ops []SetOption,
 	wantErr error,
 	mocks []*mok.Mock,
 	t *testing.T,
 ) {
-	_, err := New(conf, serverInfo, transport)
+	_, err := New(serverInfo, transport, ops...)
 	if err != wantErr {
 		t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
 	}

@@ -1,4 +1,4 @@
-package server
+package dser
 
 import (
 	"context"
@@ -8,50 +8,54 @@ import (
 	"github.com/cmd-stream/delegate-go"
 )
 
-// New creates a new Delegate initialized by the transport factory and handler.
+// New creates a new Delegate.
 //
-// If ServerInfo is empty, it panics with ErrEmptyInfo.
-func New[T any](conf Conf, info delegate.ServerInfo,
+// Panics with ErrEmptyInfo if ServerInfo is empty.
+func New[T any](info delegate.ServerInfo,
 	factory delegate.ServerTransportFactory[T],
 	handler delegate.ServerTransportHandler[T],
-) Delegate[T] {
+	ops ...SetOption,
+) (d Delegate[T]) {
 	if len(info) == 0 {
 		panic(ErrEmptyInfo)
 	}
-	return Delegate[T]{conf, info, factory, handler}
+	Apply(ops, &d.options)
+	d.info = info
+	d.factory = factory
+	d.handler = handler
+	return
 }
 
-// Delegate is an implementation of the base.ServerDelegate interface.
+// Delegate implements the base.ServerDelegate interface.
 //
-// It initialize the connection by sending system data (ServerInfo and
-// ServerSettins) to the client.
+// It initializes the connection by sending ServerInfo to the client.
 type Delegate[T any] struct {
-	conf    Conf
 	info    delegate.ServerInfo
 	factory delegate.ServerTransportFactory[T]
 	handler delegate.ServerTransportHandler[T]
+	options Options
 }
 
-func (h Delegate[T]) Handle(ctx context.Context, conn net.Conn) (
+func (d Delegate[T]) Handle(ctx context.Context, conn net.Conn) (
 	err error) {
-	transport := h.factory.New(conn)
-	err = h.sendServerInfo(transport)
+	transport := d.factory.New(conn)
+	err = d.sendServerInfo(transport)
 	if err != nil {
 		if err := transport.Close(); err != nil {
 			panic(err)
 		}
 		return err
 	}
-	return h.handler.Handle(ctx, transport)
+	return d.handler.Handle(ctx, transport)
 }
 
-func (h Delegate[T]) sendServerInfo(transport delegate.ServerTransport[T]) (
+func (d Delegate[T]) sendServerInfo(transport delegate.ServerTransport[T]) (
 	err error) {
-	if h.conf.SysDataSendDuration != 0 {
-		deadline := time.Now().Add(h.conf.SysDataSendDuration)
+	if d.options.ServerInfoSendDuration != 0 {
+		deadline := time.Now().Add(d.options.ServerInfoSendDuration)
 		if err = transport.SetSendDeadline(deadline); err != nil {
 			return
 		}
 	}
-	return transport.SendServerInfo(h.info)
+	return transport.SendServerInfo(d.info)
 }

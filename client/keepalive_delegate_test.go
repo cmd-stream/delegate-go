@@ -1,4 +1,4 @@
-package client
+package dcln
 
 import (
 	"errors"
@@ -30,11 +30,10 @@ func TestKeepaliveDelegate(t *testing.T) {
 			).RegisterClose(
 				func() (err error) { return nil },
 			)
-			conf = Conf{
-				KeepaliveTime:  5 * time.Second,
-				KeepaliveIntvl: time.Second,
-			}
-			dlgt             = NewKeepalive[any](conf, d)
+			dlgt = NewKeepalive[any](d,
+				WithKeepaliveTime(5*time.Second),
+				WithKeepaliveIntvl(time.Second),
+			)
 			mocks            = []*mok.Mock{d.Mock}
 			seq, result, err = dlgt.Receive()
 		)
@@ -58,15 +57,13 @@ func TestKeepaliveDelegate(t *testing.T) {
 	t.Run("KeepaliveDelegate should send Ping Commands if no Commands was send",
 		func(t *testing.T) {
 			var (
-				done    = make(chan struct{})
-				wantSeq = 0
-				wantCmd = delegate.PingCmd[any]{}
-				start   = time.Now()
-				conf    = Conf{
-					KeepaliveTime:  2 * 200 * time.Millisecond,
-					KeepaliveIntvl: 200 * time.Millisecond,
-				}
-				d = mock.NewClientDelegate().RegisterNSetSendDeadline(2,
+				done               = make(chan struct{})
+				wantSeq            = 0
+				wantCmd            = delegate.PingCmd[any]{}
+				start              = time.Now()
+				wantKeepaliveTime  = 2 * 200 * time.Millisecond
+				wantKeepaliveIntvl = 200 * time.Millisecond
+				d                  = mock.NewClientDelegate().RegisterNSetSendDeadline(2,
 					func(deadline time.Time) (err error) {
 						wantTime := time.Time{}
 						if !SameTime(wantTime, deadline) {
@@ -78,7 +75,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 				).RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 						var (
-							wantTime   = start.Add(conf.KeepaliveTime)
+							wantTime   = start.Add(wantKeepaliveTime)
 							actualTime = time.Now()
 						)
 						if !SameTime(wantTime, actualTime) {
@@ -100,7 +97,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 				).RegisterSend(
 					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 						var (
-							wantTime   = start.Add(conf.KeepaliveTime).Add(conf.KeepaliveIntvl)
+							wantTime   = start.Add(wantKeepaliveTime).Add(wantKeepaliveIntvl)
 							actualTime = time.Now()
 						)
 						if !SameTime(wantTime, actualTime) {
@@ -124,12 +121,14 @@ func TestKeepaliveDelegate(t *testing.T) {
 				)
 
 				mocks = []*mok.Mock{d.Mock}
-				dlgt  = NewKeepalive[any](conf, d)
+				dlgt  = NewKeepalive[any](d,
+					WithKeepaliveTime(wantKeepaliveTime),
+					WithKeepaliveIntvl(wantKeepaliveIntvl))
 			)
 			dlgt.Keepalive(&sync.Mutex{})
 			select {
 			case <-done:
-			case <-time.NewTimer(conf.KeepaliveTime + conf.KeepaliveIntvl + time.Second).C:
+			case <-time.NewTimer(wantKeepaliveTime + wantKeepaliveIntvl + time.Second).C:
 				t.Fatal("test lasts too long")
 			}
 
@@ -143,14 +142,12 @@ func TestKeepaliveDelegate(t *testing.T) {
 
 	t.Run("Command flushing should delay a ping", func(t *testing.T) {
 		var (
-			done       = make(chan struct{})
-			start      = time.Now()
-			flushDelay = 200 * time.Millisecond
-			conf       = Conf{
-				KeepaliveTime:  2 * 200 * time.Millisecond,
-				KeepaliveIntvl: 200 * time.Millisecond,
-			}
-			d = mock.NewClientDelegate().RegisterFlush(
+			done               = make(chan struct{})
+			start              = time.Now()
+			flushDelay         = 200 * time.Millisecond
+			wantKeepaliveTime  = 2 * 200 * time.Millisecond
+			wantKeepaliveIntvl = 200 * time.Millisecond
+			d                  = mock.NewClientDelegate().RegisterFlush(
 				func() (err error) { return nil },
 			).RegisterSetSendDeadline(
 				func(deadline time.Time) (err error) {
@@ -164,7 +161,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			).RegisterSend(
 				func(seq base.Seq, cmd base.Cmd[any]) (err error) {
 					var (
-						wantTime   = start.Add(flushDelay).Add(conf.KeepaliveTime)
+						wantTime   = start.Add(flushDelay).Add(wantKeepaliveTime)
 						actualTime = time.Now()
 					)
 					if !SameTime(wantTime, actualTime) {
@@ -179,7 +176,9 @@ func TestKeepaliveDelegate(t *testing.T) {
 				func() (err error) { return nil },
 			)
 			mocks = []*mok.Mock{d.Mock}
-			dlgt  = NewKeepalive[any](conf, d)
+			dlgt  = NewKeepalive[any](d,
+				WithKeepaliveTime(wantKeepaliveTime),
+				WithKeepaliveIntvl(wantKeepaliveIntvl))
 		)
 		dlgt.Keepalive(&sync.Mutex{})
 		time.Sleep(flushDelay)
@@ -188,7 +187,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 		}
 		select {
 		case <-done:
-		case <-time.NewTimer(conf.KeepaliveTime + flushDelay + time.Second).C:
+		case <-time.NewTimer(wantKeepaliveTime + flushDelay + time.Second).C:
 			t.Fatal("test lasts too long")
 		}
 		if err := dlgt.Close(); err != nil {
@@ -204,12 +203,11 @@ func TestKeepaliveDelegate(t *testing.T) {
 			d = mock.NewClientDelegate().RegisterClose(
 				func() (err error) { return nil },
 			)
-			conf = Conf{
-				KeepaliveTime:  200 * time.Millisecond,
-				KeepaliveIntvl: 200 * time.Millisecond,
-			}
 			mocks = []*mok.Mock{d.Mock}
-			dlgt  = NewKeepalive[any](conf, d)
+			dlgt  = NewKeepalive[any](d,
+				WithKeepaliveTime(200*time.Millisecond),
+				WithKeepaliveIntvl(200*time.Millisecond),
+			)
 		)
 		if err := dlgt.Close(); err != nil {
 			t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
@@ -236,12 +234,11 @@ func TestKeepaliveDelegate(t *testing.T) {
 				).RegisterClose(
 					func() (err error) { return nil },
 				)
-				conf = Conf{
-					KeepaliveTime:  200 * time.Millisecond,
-					KeepaliveIntvl: 200 * time.Millisecond,
-				}
 				mocks = []*mok.Mock{d.Mock}
-				dlgt  = NewKeepalive[any](conf, d)
+				dlgt  = NewKeepalive[any](d,
+					WithKeepaliveTime(200*time.Millisecond),
+					WithKeepaliveIntvl(200*time.Millisecond),
+				)
 			)
 			dlgt.Keepalive(&sync.Mutex{})
 			if err := dlgt.Close(); err != wantErr {
@@ -274,12 +271,11 @@ func TestKeepaliveDelegate(t *testing.T) {
 				).RegisterClose(
 					func() (err error) { return nil },
 				)
-				conf = Conf{
-					KeepaliveTime:  200 * time.Millisecond,
-					KeepaliveIntvl: 200 * time.Millisecond,
-				}
 				mocks = []*mok.Mock{d.Mock}
-				dlgt  = NewKeepalive[any](conf, d)
+				dlgt  = NewKeepalive[any](d,
+					WithKeepaliveTime(200*time.Millisecond),
+					WithKeepaliveIntvl(200*time.Millisecond),
+				)
 			)
 			dlgt.Keepalive(&sync.Mutex{})
 			select {
@@ -314,12 +310,11 @@ func TestKeepaliveDelegate(t *testing.T) {
 				).RegisterClose(
 					func() (err error) { return nil },
 				)
-				conf = Conf{
-					KeepaliveTime:  200 * time.Millisecond,
-					KeepaliveIntvl: 200 * time.Millisecond,
-				}
 				mocks = []*mok.Mock{d.Mock}
-				dlgt  = NewKeepalive[any](conf, d)
+				dlgt  = NewKeepalive[any](d,
+					WithKeepaliveTime(200*time.Millisecond),
+					WithKeepaliveIntvl(200*time.Millisecond),
+				)
 			)
 			dlgt.Keepalive(&sync.Mutex{})
 			if err := dlgt.Flush(); err != wantErr {

@@ -6,24 +6,30 @@ import (
 	"github.com/mus-format/mus-stream-go/raw"
 )
 
-// ServerInfo helps the client identify a compatible server.
+var byteSliceMUS = ord.NewSliceSer[byte](raw.Byte)
+
+// ServerInfo allows the client to identify a compatible server.
 type ServerInfo []byte
 
-// MarshalServerInfoMUS marshals a ServerInfo to the MUS format.
-func MarshalServerInfoMUS(info ServerInfo, w muss.Writer) (n int, err error) {
-	return ord.MarshalSlice[byte](info, nil,
-		muss.MarshallerFn[byte](raw.MarshalByte),
-		w)
+// ServerInfoMUS is a ServerInfo MUS serializer.
+var ServerInfoMUS = serverInfoMUS{}
+
+type serverInfoMUS struct{}
+
+func (s serverInfoMUS) Marshal(info ServerInfo, w muss.Writer) (n int,
+	err error) {
+	return byteSliceMUS.Marshal(info, w)
 }
 
-// UnmarshalServerInfoMUS unmarshals a ServerInfo from the MUS format.
-func UnmarshalServerInfoMUS(r muss.Reader) (info ServerInfo, n int, err error) {
-	return ord.UnmarshalSlice[byte](nil,
-		muss.UnmarshallerFn[byte](raw.UnmarshalByte),
-		r)
+func (s serverInfoMUS) Unmarshal(r muss.Reader) (info ServerInfo, n int,
+	err error) {
+	return byteSliceMUS.Unmarshal(r)
 }
 
-// SizeServerInfoMUS returns the size of ServerInfo in the MUS format.
-func SizeServerInfoMUS(info ServerInfo) (size int) {
-	return ord.SizeSlice[byte](info, nil, muss.SizerFn[byte](raw.SizeByte))
+func (s serverInfoMUS) Size(info ServerInfo) (size int) {
+	return byteSliceMUS.Size(info)
+}
+
+func (s serverInfoMUS) Skip(r muss.Reader) (n int, err error) {
+	return byteSliceMUS.Skip(r)
 }

@@ -1,6 +1,6 @@
-package server
+package dser
 
 import "errors"
 
-// ErrEmptyInfo happens on Delegate creation, when ServerInfo is empty.
+// ErrEmptyInfo happens when ServerInfo is empty during Delegate creation.
 var ErrEmptyInfo = errors.New("empty info")

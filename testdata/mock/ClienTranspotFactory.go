@@ -1,4 +1,4 @@
-package mock
+package dmock
 
 import (
 	"github.com/cmd-stream/delegate-go"

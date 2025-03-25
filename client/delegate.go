@@ -1,4 +1,4 @@
-package client
+package dcln
 
 import (
 	"bytes"
@@ -11,28 +11,29 @@ import (
 
 // New creates a new Delegate.
 //
-// When created, the Delegate expects to receive ServerInfo from the server.
+// The Delegate expects to receive ServerInfo from the server upon creation.
 //
 // Returns ErrServerInfoMismatch if the received ServerInfo does not match
 // the specified one.
-func New[T any](conf Conf, info delegate.ServerInfo,
-	transport delegate.ClienTransport[T]) (delegate Delegate[T], err error) {
-	err = checkServerInfo(conf.SysDataReceiveDuration, transport, info)
+func New[T any](info delegate.ServerInfo, transport delegate.ClienTransport[T],
+	ops ...SetOption) (d Delegate[T], err error) {
+	Apply(ops, &d.options)
+	err = checkServerInfo(d.options.ServerInfoReceiveDuration, transport, info)
 	if err != nil {
 		return
 	}
-	delegate = Delegate[T]{conf, transport}
+	d.transport = transport
 	return
 }
 
-// Delegate is an implementation of the base.ClientDelegate interface.
+// Delegate implements the base.ClientDelegate interface.
 type Delegate[T any] struct {
-	conf      Conf
 	transport delegate.ClienTransport[T]
+	options   Options
 }
 
-func (d Delegate[T]) Conf() Conf {
-	return d.conf
+func (d Delegate[T]) Options() Options {
+	return d.options
 }
 
 func (d Delegate[T]) LocalAddr() net.Addr {

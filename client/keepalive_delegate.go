@@ -1,4 +1,4 @@
-package client
+package dcln
 
 import (
 	"sync"
@@ -8,26 +8,35 @@ import (
 	"github.com/cmd-stream/delegate-go"
 )
 
+const (
+	KeepaliveTime  = 3 * time.Second
+	KeepaliveIntvl = time.Second
+)
+
 // NewKeepalive creates a new KeepaliveDelegate.
-func NewKeepalive[T any](conf Conf, d base.ClientDelegate[T]) KeepaliveDelegate[T] {
-	return KeepaliveDelegate[T]{
-		ClientDelegate: d,
-		conf:           conf,
-		alive:          make(chan struct{}),
-		done:           make(chan struct{}),
+func NewKeepalive[T any](d base.ClientDelegate[T], ops ...SetKeepaliveOption) (
+	kd KeepaliveDelegate[T]) {
+	kd.options = KeepaliveOptions{
+		KeepaliveTime:  KeepaliveTime,
+		KeepaliveIntvl: KeepaliveIntvl,
 	}
+	ApplyKeepAlive(ops, &kd.options)
+	kd.ClientDelegate = d
+	kd.alive = make(chan struct{})
+	kd.done = make(chan struct{})
+	return
 }
 
-// KeepaliveDelegate is an implementation of the base.ClientDelegate interface.
+// KeepaliveDelegate implements the base.ClientDelegate interface.
 //
-// When there is no Commands to send, it starts Ping-Pong with the server -
-// sends the Ping Command and receives the Pong Result, both of which are
-// transfered as a 0 (like a ball) byte.
+// When there are no Commands to send, it initiates a Ping-Pong exchange with
+// the server. It sends a Ping Command and expects a Pong Result, both
+// represented as a single zero byte (like a ball being passed).
 type KeepaliveDelegate[T any] struct {
 	base.ClientDelegate[T]
-	conf  Conf
-	alive chan struct{}
-	done  chan struct{}
+	alive   chan struct{}
+	done    chan struct{}
+	options KeepaliveOptions
 }
 
 func (d KeepaliveDelegate[T]) Receive() (seq base.Seq, result base.Result,
@@ -67,19 +76,19 @@ func (d KeepaliveDelegate[T]) Keepalive(muSn *sync.Mutex) {
 }
 
 func keepalive[T any](d KeepaliveDelegate[T], muSn *sync.Mutex) {
-	timer := time.NewTimer(d.conf.KeepaliveTime)
+	timer := time.NewTimer(d.options.KeepaliveTime)
 	for {
 		select {
 		case <-d.done:
 			return
 		case <-timer.C:
 			ping(muSn, 0, d) // nothing to do if ping returns an error, TODO
-			timer.Reset(d.conf.KeepaliveIntvl)
+			timer.Reset(d.options.KeepaliveIntvl)
 		case <-d.alive:
 			if !timer.Stop() {
 				<-timer.C
 			}
-			timer.Reset(d.conf.KeepaliveTime)
+			timer.Reset(d.options.KeepaliveTime)
 		}
 	}
 }
