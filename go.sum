@@ -6,5 +6,5 @@ github.com/mus-format/mus-stream-go v0.6.2 h1:Tc4fQn05B0mrJqdRuAi8uSraL0kdyEh1mk
 github.com/mus-format/mus-stream-go v0.6.2/go.mod h1:QKUch4gu6y8vsj4JyMykYqhlOMMLhP8mlL7VrYv1y7s=
 github.com/ymz-ncnk/mok v0.2.0 h1:4xOvkG0EXDlr05ZTSeRzM2q5mbyNbALRqRoI+cTwUyc=
 github.com/ymz-ncnk/mok v0.2.0/go.mod h1:VDVVGULp0vdJeD27SgJghOFGyD7w3nX7SDh8TOlvIsY=
-golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691 h1:/yRP+0AN7mf5DkD3BAI6TOFnd51gEoDEb8o35jIFtgw=
-golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691/go.mod h1:FXUEEKJgO7OQYeo8N01OfiKP8RXMtf6e8aTskBGqWdc=
+golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 h1:nDVHiLt8aIbd/VzvPWN6kSOPE7+F/fNFDSXLVYkE/Iw=
+golang.org/x/exp v0.0.0-20250305212735-054e65f0b394/go.mod h1:sIifuuw/Yco/y6yb6+bDNfyeQ/MdPUy/hKEMYQV17cM=

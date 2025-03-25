@@ -1,6 +1,6 @@
 module github.com/cmd-stream/delegate-go
 
-go 1.20
+go 1.23.0
 
 require (
 	github.com/cmd-stream/base-go v0.0.0-20250325143652-da24f04b9776
@@ -10,5 +10,5 @@ require (
 
 require (
 	github.com/mus-format/common-go v0.0.0-20250307125743-867bbd6eb59c // indirect
-	golang.org/x/exp v0.0.0-20230728194245-b0cb94b80691 // indirect
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 )
