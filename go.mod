@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/cmd-stream/base-go v0.0.0-20250325143652-da24f04b9776
-	github.com/mus-format/mus-stream-go v0.6.2
+	github.com/mus-format/mus-stream-go v0.7.0
 	github.com/ymz-ncnk/mok v0.2.0
 )
 
