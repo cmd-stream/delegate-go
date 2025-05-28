@@ -1,10 +1,12 @@
-github.com/cmd-stream/base-go v0.0.0-20250325143652-da24f04b9776 h1:2G7jswFqm7RViC+gfYFBMAnFYu+Tsi70bEzebeV6c/c=
-github.com/cmd-stream/base-go v0.0.0-20250325143652-da24f04b9776/go.mod h1:TGNARVuDSdpKjcnmwMEHuXFKBXw+82CO3MdWbnuWrIs=
+github.com/cmd-stream/base-go v0.0.0-20250528172112-c2e562b90cc5 h1:8WWBs/xKFsWY31BJsNPaRoCasUlDPGYSl9lQlaE1gNc=
+github.com/cmd-stream/base-go v0.0.0-20250528172112-c2e562b90cc5/go.mod h1:pgjDdAEVAW9KDfIl7bhdLo6vNtogbRhp0NttawTyG+E=
 github.com/mus-format/common-go v0.0.0-20250307125743-867bbd6eb59c h1:axAH0WwqkZNIWZIyswO59y63JaymSi9kqy3yybhQTdI=
 github.com/mus-format/common-go v0.0.0-20250307125743-867bbd6eb59c/go.mod h1:1hTb8w0YdSGIOU6wNY+e9uXnDZ9OQnUivNtd8cPSdoU=
 github.com/mus-format/mus-stream-go v0.7.0 h1:FejG1zOcm7N1kssC7aanlcviUM+S3W4M7enqPdmJlg0=
 github.com/mus-format/mus-stream-go v0.7.0/go.mod h1:QKUch4gu6y8vsj4JyMykYqhlOMMLhP8mlL7VrYv1y7s=
-github.com/ymz-ncnk/mok v0.2.0 h1:4xOvkG0EXDlr05ZTSeRzM2q5mbyNbALRqRoI+cTwUyc=
-github.com/ymz-ncnk/mok v0.2.0/go.mod h1:VDVVGULp0vdJeD27SgJghOFGyD7w3nX7SDh8TOlvIsY=
+github.com/ymz-ncnk/assert v0.0.0-20250528151733-c41b2fca7933 h1:V48ApBa/TSsGNKnIapVQs1q/5+HAaOk51b24L8yuPpA=
+github.com/ymz-ncnk/assert v0.0.0-20250528151733-c41b2fca7933/go.mod h1:+lSOTrCyOPuvc0xuvK4uKhgQ0Ar3U/HJPpJZg73kvgE=
+github.com/ymz-ncnk/mok v0.2.1 h1:rx/QVO4W2d3s6g1Q2tVeIndD0Yhc66pVJRB2RHpXWSo=
+github.com/ymz-ncnk/mok v0.2.1/go.mod h1:BYggihmf3kEBo7HfDVwDEqZ08gO8og8o5fcd8xuPmu0=
 golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 h1:nDVHiLt8aIbd/VzvPWN6kSOPE7+F/fNFDSXLVYkE/Iw=
 golang.org/x/exp v0.0.0-20250305212735-054e65f0b394/go.mod h1:sIifuuw/Yco/y6yb6+bDNfyeQ/MdPUy/hKEMYQV17cM=

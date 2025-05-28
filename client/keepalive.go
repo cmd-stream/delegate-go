@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/cmd-stream/base-go"
+	bcln "github.com/cmd-stream/base-go/client"
 	"github.com/cmd-stream/delegate-go"
 )
 
@@ -14,14 +15,14 @@ const (
 )
 
 // NewKeepalive creates a new KeepaliveDelegate.
-func NewKeepalive[T any](d base.ClientDelegate[T], ops ...SetKeepaliveOption) (
+func NewKeepalive[T any](d bcln.Delegate[T], ops ...SetKeepaliveOption) (
 	kd KeepaliveDelegate[T]) {
 	kd.options = KeepaliveOptions{
 		KeepaliveTime:  KeepaliveTime,
 		KeepaliveIntvl: KeepaliveIntvl,
 	}
 	ApplyKeepAlive(ops, &kd.options)
-	kd.ClientDelegate = d
+	kd.Delegate = d
 	kd.alive = make(chan struct{})
 	kd.done = make(chan struct{})
 	return
@@ -33,16 +34,16 @@ func NewKeepalive[T any](d base.ClientDelegate[T], ops ...SetKeepaliveOption) (
 // the server. It sends a Ping Command and expects a Pong Result, both
 // represented as a single zero byte (like a ball being passed).
 type KeepaliveDelegate[T any] struct {
-	base.ClientDelegate[T]
+	bcln.Delegate[T]
 	alive   chan struct{}
 	done    chan struct{}
 	options KeepaliveOptions
 }
 
 func (d KeepaliveDelegate[T]) Receive() (seq base.Seq, result base.Result,
-	err error) {
+	n int, err error) {
 Start:
-	seq, result, err = d.ClientDelegate.Receive()
+	seq, result, n, err = d.Delegate.Receive()
 	if err != nil {
 		return
 	}
@@ -53,7 +54,7 @@ Start:
 }
 
 func (d KeepaliveDelegate[T]) Flush() (err error) {
-	if err = d.ClientDelegate.Flush(); err != nil {
+	if err = d.Delegate.Flush(); err != nil {
 		return
 	}
 	select {
@@ -64,7 +65,7 @@ func (d KeepaliveDelegate[T]) Flush() (err error) {
 }
 
 func (d KeepaliveDelegate[T]) Close() (err error) {
-	if err = d.ClientDelegate.Close(); err != nil {
+	if err = d.Delegate.Close(); err != nil {
 		return
 	}
 	close(d.done)
@@ -72,7 +73,7 @@ func (d KeepaliveDelegate[T]) Close() (err error) {
 }
 
 func (d KeepaliveDelegate[T]) Keepalive(muSn *sync.Mutex) {
-	go keepalive[T](d, muSn)
+	go keepalive(d, muSn)
 }
 
 func keepalive[T any](d KeepaliveDelegate[T], muSn *sync.Mutex) {
@@ -93,16 +94,17 @@ func keepalive[T any](d KeepaliveDelegate[T], muSn *sync.Mutex) {
 	}
 }
 
-func ping[T any](muSn *sync.Mutex, seq base.Seq, d KeepaliveDelegate[T]) (err error) {
+func ping[T any](muSn *sync.Mutex, seq base.Seq, d KeepaliveDelegate[T]) (
+	n int, err error) {
 	muSn.Lock()
 	if err = d.SetSendDeadline(time.Time{}); err != nil {
 		muSn.Unlock()
 		return
 	}
-	if err = d.Send(seq, delegate.PingCmd[T]{}); err != nil {
+	if n, err = d.Send(seq, delegate.PingCmd[T]{}); err != nil {
 		muSn.Unlock()
 		return
 	}
 	muSn.Unlock()
-	return d.ClientDelegate.Flush()
+	return n, d.Delegate.Flush()
 }

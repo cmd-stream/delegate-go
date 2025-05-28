@@ -15,7 +15,7 @@ import (
 //
 // Returns ErrServerInfoMismatch if the received ServerInfo does not match
 // the specified one.
-func New[T any](info delegate.ServerInfo, transport delegate.ClienTransport[T],
+func New[T any](info delegate.ServerInfo, transport Transport[T],
 	ops ...SetOption) (d Delegate[T], err error) {
 	Apply(ops, &d.options)
 	err = checkServerInfo(d.options.ServerInfoReceiveDuration, transport, info)
@@ -26,9 +26,15 @@ func New[T any](info delegate.ServerInfo, transport delegate.ClienTransport[T],
 	return
 }
 
+// NewWithoutInfo for tests only.
+func NewWithoutInfo[T any](transport Transport[T]) (d Delegate[T]) {
+	d.transport = transport
+	return
+}
+
 // Delegate implements the base.ClientDelegate interface.
 type Delegate[T any] struct {
-	transport delegate.ClienTransport[T]
+	transport Transport[T]
 	options   Options
 }
 
@@ -48,7 +54,7 @@ func (d Delegate[T]) SetSendDeadline(deadline time.Time) error {
 	return d.transport.SetSendDeadline(deadline)
 }
 
-func (d Delegate[T]) Send(seq base.Seq, cmd base.Cmd[T]) (err error) {
+func (d Delegate[T]) Send(seq base.Seq, cmd base.Cmd[T]) (n int, err error) {
 	return d.transport.Send(seq, cmd)
 }
 
@@ -60,7 +66,8 @@ func (d Delegate[T]) SetReceiveDeadline(deadline time.Time) error {
 	return d.transport.SetReceiveDeadline(deadline)
 }
 
-func (d Delegate[T]) Receive() (seq base.Seq, result base.Result, err error) {
+func (d Delegate[T]) Receive() (seq base.Seq, result base.Result, n int,
+	err error) {
 	return d.transport.Receive()
 }
 
@@ -69,7 +76,7 @@ func (d Delegate[T]) Close() error {
 }
 
 func checkServerInfo[T any](timeout time.Duration,
-	transport delegate.ClienTransport[T],
+	transport Transport[T],
 	wantInfo delegate.ServerInfo,
 ) (err error) {
 	err = transport.SetReceiveDeadline(calcDeadline(timeout))

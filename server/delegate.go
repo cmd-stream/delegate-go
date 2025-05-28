@@ -11,9 +11,8 @@ import (
 // New creates a new Delegate.
 //
 // Panics with ErrEmptyInfo if ServerInfo is empty.
-func New[T any](info delegate.ServerInfo,
-	factory delegate.ServerTransportFactory[T],
-	handler delegate.ServerTransportHandler[T],
+func New[T any](info delegate.ServerInfo, factory TransportFactory[T],
+	handler TransportHandler[T],
 	ops ...SetOption,
 ) (d Delegate[T]) {
 	if len(info) == 0 {
@@ -31,13 +30,12 @@ func New[T any](info delegate.ServerInfo,
 // It initializes the connection by sending ServerInfo to the client.
 type Delegate[T any] struct {
 	info    delegate.ServerInfo
-	factory delegate.ServerTransportFactory[T]
-	handler delegate.ServerTransportHandler[T]
+	factory TransportFactory[T]
+	handler TransportHandler[T]
 	options Options
 }
 
-func (d Delegate[T]) Handle(ctx context.Context, conn net.Conn) (
-	err error) {
+func (d Delegate[T]) Handle(ctx context.Context, conn net.Conn) (err error) {
 	transport := d.factory.New(conn)
 	err = d.sendServerInfo(transport)
 	if err != nil {
@@ -49,8 +47,7 @@ func (d Delegate[T]) Handle(ctx context.Context, conn net.Conn) (
 	return d.handler.Handle(ctx, transport)
 }
 
-func (d Delegate[T]) sendServerInfo(transport delegate.ServerTransport[T]) (
-	err error) {
+func (d Delegate[T]) sendServerInfo(transport Transport[T]) (err error) {
 	if d.options.ServerInfoSendDuration != 0 {
 		deadline := time.Now().Add(d.options.ServerInfoSendDuration)
 		if err = transport.SetSendDeadline(deadline); err != nil {

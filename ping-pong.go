@@ -9,9 +9,10 @@ import (
 
 type PingCmd[T any] struct{}
 
-func (c PingCmd[T]) Exec(ctx context.Context, at time.Time, seq base.Seq,
-	receiver T, proxy base.Proxy) error {
-	return proxy.SendWithDeadline(time.Time{}, seq, PongResult{})
+func (c PingCmd[T]) Exec(ctx context.Context, seq base.Seq, at time.Time,
+	receiver T, proxy base.Proxy) (err error) {
+	_, err = proxy.SendWithDeadline(seq, PongResult{}, time.Time{})
+	return
 }
 
 type PongResult struct{}

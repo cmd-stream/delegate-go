@@ -2,117 +2,96 @@ package dcln
 
 import (
 	"errors"
-	"reflect"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/cmd-stream/base-go"
-	"github.com/cmd-stream/base-go/testdata/mock"
+	bcmock "github.com/cmd-stream/base-go/client/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
+	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
 
 func TestKeepaliveDelegate(t *testing.T) {
 
+	var delta = 100 * time.Millisecond
+
 	t.Run("Receive should not return PongResult", func(t *testing.T) {
 		var (
-			wantErr = errors.New("receive error")
-			d       = mock.NewClientDelegate().RegisterReceive(
-				func() (seq base.Seq, result base.Result, err error) {
-					return 0, delegate.PongResult{}, nil
+			wantSeq      base.Seq    = 0
+			wantResult   base.Result = nil
+			wantN        int         = 1
+			wantErr                  = errors.New("receive error")
+			wantCloseErr error       = nil
+			d                        = bcmock.NewDelegate().RegisterReceive(
+				func() (seq base.Seq, result base.Result, n int, err error) {
+					return 0, delegate.PongResult{}, 2, nil
 				},
 			).RegisterReceive(
-				func() (seq base.Seq, result base.Result, err error) {
+				func() (seq base.Seq, result base.Result, n int, err error) {
+					n = wantN
 					err = wantErr
 					return
 				},
 			).RegisterClose(
 				func() (err error) { return nil },
 			)
-			dlgt = NewKeepalive[any](d,
+			dlgt = NewKeepalive(d,
 				WithKeepaliveTime(5*time.Second),
 				WithKeepaliveIntvl(time.Second),
 			)
-			mocks            = []*mok.Mock{d.Mock}
-			seq, result, err = dlgt.Receive()
+			mocks               = []*mok.Mock{d.Mock}
+			seq, result, n, err = dlgt.Receive()
 		)
-		if seq != 0 {
-			t.Errorf("unexpected seq, want '%v' actual '%v'", 0, seq)
-		}
-		if result != nil {
-			t.Errorf("unexpected result, want '%v' actual '%v'", nil, result)
-		}
-		if err != wantErr {
-			t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
-		}
-		if err := dlgt.Close(); err != nil {
-			t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-		}
-		if infomap := mok.CheckCalls(mocks); len(infomap) > 0 {
-			t.Error(infomap)
-		}
+		asserterror.Equal(err, wantErr, t)
+		asserterror.Equal(seq, wantSeq, t)
+		asserterror.Equal(result, wantResult, t)
+		asserterror.Equal(n, wantN, t)
+
+		err = dlgt.Close()
+		asserterror.Equal(err, wantCloseErr, t)
+
+		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 	})
 
 	t.Run("KeepaliveDelegate should send Ping Commands if no Commands was send",
 		func(t *testing.T) {
 			var (
 				done               = make(chan struct{})
-				wantSeq            = 0
 				wantCmd            = delegate.PingCmd[any]{}
 				start              = time.Now()
 				wantKeepaliveTime  = 2 * 200 * time.Millisecond
 				wantKeepaliveIntvl = 200 * time.Millisecond
-				d                  = mock.NewClientDelegate().RegisterNSetSendDeadline(2,
+				d                  = bcmock.NewDelegate().RegisterNSetSendDeadline(2,
 					func(deadline time.Time) (err error) {
-						wantTime := time.Time{}
-						if !SameTime(wantTime, deadline) {
-							t.Errorf("unexpected dealine, want '%v' actual '%v'", wantTime,
-								deadline)
-						}
+						wantDeadline := time.Time{}
+						asserterror.SameTime(deadline, wantDeadline, delta, t)
 						return
 					},
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
+					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
 						var (
 							wantTime   = start.Add(wantKeepaliveTime)
 							actualTime = time.Now()
 						)
-						if !SameTime(wantTime, actualTime) {
-							t.Errorf("unexpected time, want '%v' actual '%v'", wantTime,
-								actualTime)
-						}
-						if seq != 0 {
-							t.Errorf("unexpected seq, want '%v' actual '%v'", wantSeq, seq)
-						}
-						if !reflect.DeepEqual(wantCmd, cmd) {
-							t.Errorf("unexpected cmd, want '%v' actual '%v'",
-								wantCmd,
-								cmd)
-						}
-						return nil
+						asserterror.SameTime(actualTime, wantTime, delta, t)
+						asserterror.Equal(seq, 0, t)
+						asserterror.EqualDeep(cmd, wantCmd, t)
+						return 1, nil
 					},
 				).RegisterFlush(
 					func() (err error) { return nil },
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
+					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
 						var (
 							wantTime   = start.Add(wantKeepaliveTime).Add(wantKeepaliveIntvl)
 							actualTime = time.Now()
 						)
-						if !SameTime(wantTime, actualTime) {
-							t.Errorf("unexpected time, want '%v' actual '%v'", wantTime,
-								actualTime)
-						}
-						if seq != 0 {
-							t.Errorf("unexpected seq, want '%v' actual '%v'", wantSeq, seq)
-						}
-						if !reflect.DeepEqual(wantCmd, cmd) {
-							t.Errorf("unexpected cmd, want '%v' actual '%v'",
-								wantCmd,
-								cmd)
-						}
-						return nil
+						asserterror.SameTime(actualTime, wantTime, delta, t)
+						asserterror.Equal(seq, 0, t)
+						asserterror.EqualDeep(cmd, wantCmd, t)
+						return 1, nil
 					},
 				).RegisterFlush(
 					func() (err error) { defer close(done); return nil },
@@ -121,23 +100,21 @@ func TestKeepaliveDelegate(t *testing.T) {
 				)
 
 				mocks = []*mok.Mock{d.Mock}
-				dlgt  = NewKeepalive[any](d,
+				dlgt  = NewKeepalive(d,
 					WithKeepaliveTime(wantKeepaliveTime),
 					WithKeepaliveIntvl(wantKeepaliveIntvl))
 			)
 			dlgt.Keepalive(&sync.Mutex{})
+
 			select {
 			case <-done:
 			case <-time.NewTimer(wantKeepaliveTime + wantKeepaliveIntvl + time.Second).C:
 				t.Fatal("test lasts too long")
 			}
 
-			if err := dlgt.Close(); err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if infomap := mok.CheckCalls(mocks); len(infomap) > 0 {
-				t.Error(infomap)
-			}
+			err := dlgt.Close()
+			asserterror.EqualError(err, nil, t)
+			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 		})
 
 	t.Run("Command flushing should delay a ping", func(t *testing.T) {
@@ -147,27 +124,21 @@ func TestKeepaliveDelegate(t *testing.T) {
 			flushDelay         = 200 * time.Millisecond
 			wantKeepaliveTime  = 2 * 200 * time.Millisecond
 			wantKeepaliveIntvl = 200 * time.Millisecond
-			d                  = mock.NewClientDelegate().RegisterFlush(
+			d                  = bcmock.NewDelegate().RegisterFlush(
 				func() (err error) { return nil },
 			).RegisterSetSendDeadline(
 				func(deadline time.Time) (err error) {
-					wantTime := time.Time{}
-					if !SameTime(wantTime, deadline) {
-						t.Errorf("unexpected dealine, want '%v' actual '%v'", wantTime,
-							deadline)
-					}
+					wantDeadline := time.Time{}
+					asserterror.SameTime(deadline, wantDeadline, delta, t)
 					return
 				},
 			).RegisterSend(
-				func(seq base.Seq, cmd base.Cmd[any]) (err error) {
+				func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
 					var (
 						wantTime   = start.Add(flushDelay).Add(wantKeepaliveTime)
 						actualTime = time.Now()
 					)
-					if !SameTime(wantTime, actualTime) {
-						t.Errorf("unexpected time, want '%v' actual '%v'", wantTime,
-							actualTime)
-					}
+					asserterror.SameTime(actualTime, wantTime, delta, t)
 					return
 				},
 			).RegisterFlush(
@@ -176,46 +147,42 @@ func TestKeepaliveDelegate(t *testing.T) {
 				func() (err error) { return nil },
 			)
 			mocks = []*mok.Mock{d.Mock}
-			dlgt  = NewKeepalive[any](d,
+			dlgt  = NewKeepalive(d,
 				WithKeepaliveTime(wantKeepaliveTime),
 				WithKeepaliveIntvl(wantKeepaliveIntvl))
 		)
 		dlgt.Keepalive(&sync.Mutex{})
 		time.Sleep(flushDelay)
-		if err := dlgt.Flush(); err != nil {
-			t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-		}
+
+		err := dlgt.Flush()
+		asserterror.EqualError(err, nil, t)
+
 		select {
 		case <-done:
 		case <-time.NewTimer(wantKeepaliveTime + flushDelay + time.Second).C:
 			t.Fatal("test lasts too long")
 		}
-		if err := dlgt.Close(); err != nil {
-			t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-		}
-		if infomap := mok.CheckCalls(mocks); len(infomap) > 0 {
-			t.Error(infomap)
-		}
+
+		err = dlgt.Close()
+		asserterror.EqualError(err, nil, t)
+		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 	})
 
 	t.Run("Close should cancel ping sending", func(t *testing.T) {
 		var (
-			d = mock.NewClientDelegate().RegisterClose(
+			d = bcmock.NewDelegate().RegisterClose(
 				func() (err error) { return nil },
 			)
 			mocks = []*mok.Mock{d.Mock}
-			dlgt  = NewKeepalive[any](d,
-				WithKeepaliveTime(200*time.Millisecond),
+			dlgt  = NewKeepalive(d, WithKeepaliveTime(200*time.Millisecond),
 				WithKeepaliveIntvl(200*time.Millisecond),
 			)
 		)
-		if err := dlgt.Close(); err != nil {
-			t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-		}
+		err := dlgt.Close()
+		asserterror.EqualError(err, nil, t)
+
 		time.Sleep(400 * time.Millisecond)
-		if infomap := mok.CheckCalls(mocks); len(infomap) > 0 {
-			t.Error(infomap)
-		}
+		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 	})
 
 	t.Run("If ClientDelegate.Close fails with an error, Close should return it and ping shold not be canceled",
@@ -223,72 +190,70 @@ func TestKeepaliveDelegate(t *testing.T) {
 			var (
 				done    = make(chan struct{})
 				wantErr = errors.New("close error")
-				d       = mock.NewClientDelegate().RegisterClose(
+				d       = bcmock.NewDelegate().RegisterClose(
 					func() (err error) { return wantErr },
 				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (err error) { return nil },
+					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) { return 1, nil },
 				).RegisterFlush(
 					func() (err error) { defer close(done); return nil },
 				).RegisterClose(
 					func() (err error) { return nil },
 				)
 				mocks = []*mok.Mock{d.Mock}
-				dlgt  = NewKeepalive[any](d,
+				dlgt  = NewKeepalive(d,
 					WithKeepaliveTime(200*time.Millisecond),
 					WithKeepaliveIntvl(200*time.Millisecond),
 				)
 			)
 			dlgt.Keepalive(&sync.Mutex{})
-			if err := dlgt.Close(); err != wantErr {
-				t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
-			}
+
+			err := dlgt.Close()
+			asserterror.EqualError(err, wantErr, t)
+
 			select {
 			case <-done:
 			case <-time.NewTimer(time.Second).C:
 				t.Fatal("test lsasts too long")
 			}
-			if err := dlgt.Close(); err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if infomap := mok.CheckCalls(mocks); len(infomap) > 0 {
-				t.Error(infomap)
-			}
+
+			err = dlgt.Close()
+			asserterror.EqualError(err, nil, t)
+			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 		})
 
 	t.Run("If ping sending fails with an error, nothing should happen",
 		func(t *testing.T) {
 			var (
 				done = make(chan struct{})
-				d    = mock.NewClientDelegate().RegisterSetSendDeadline(
+				d    = bcmock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
+					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
 						defer close(done)
-						return errors.New("send error")
+						return 1, errors.New("send error")
 					},
 				).RegisterClose(
 					func() (err error) { return nil },
 				)
 				mocks = []*mok.Mock{d.Mock}
-				dlgt  = NewKeepalive[any](d,
+				dlgt  = NewKeepalive(d,
 					WithKeepaliveTime(200*time.Millisecond),
 					WithKeepaliveIntvl(200*time.Millisecond),
 				)
 			)
 			dlgt.Keepalive(&sync.Mutex{})
+
 			select {
 			case <-done:
 			case <-time.NewTimer(time.Second).C:
 				t.Fatal("test lsasts too long")
 			}
-			if err := dlgt.Close(); err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if infomap := mok.CheckCalls(mocks); len(infomap) > 0 {
-				t.Error(infomap)
-			}
+
+			err := dlgt.Close()
+			asserterror.EqualError(err, nil, t)
+			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 		})
 
 	t.Run("If ClientDelegate.Flush fails with an error, Flush should return it and ping sending should not be delayed",
@@ -296,12 +261,12 @@ func TestKeepaliveDelegate(t *testing.T) {
 			var (
 				done    = make(chan struct{})
 				wantErr = errors.New("flush error")
-				d       = mock.NewClientDelegate().RegisterFlush(
+				d       = bcmock.NewDelegate().RegisterFlush(
 					func() (err error) { return wantErr },
 				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (err error) {
+					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
 						defer close(done)
 						return
 					},
@@ -311,26 +276,25 @@ func TestKeepaliveDelegate(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				mocks = []*mok.Mock{d.Mock}
-				dlgt  = NewKeepalive[any](d,
+				dlgt  = NewKeepalive(d,
 					WithKeepaliveTime(200*time.Millisecond),
 					WithKeepaliveIntvl(200*time.Millisecond),
 				)
 			)
 			dlgt.Keepalive(&sync.Mutex{})
-			if err := dlgt.Flush(); err != wantErr {
-				t.Errorf("unexpected error, want '%v' actual '%v'", wantErr, err)
-			}
+
+			err := dlgt.Flush()
+			asserterror.EqualError(err, wantErr, t)
+
 			select {
 			case <-done:
 			case <-time.NewTimer(time.Second).C:
 				t.Fatal("test lsasts too long")
 			}
-			if err := dlgt.Close(); err != nil {
-				t.Errorf("unexpected error, want '%v' actual '%v'", nil, err)
-			}
-			if infomap := mok.CheckCalls(mocks); len(infomap) > 0 {
-				t.Error(infomap)
-			}
+
+			err = dlgt.Close()
+			asserterror.EqualError(err, nil, t)
+			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 		})
 
 }

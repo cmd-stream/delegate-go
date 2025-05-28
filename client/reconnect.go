@@ -12,7 +12,7 @@ import (
 
 // NewReconnect creates a new ReconnectDelegate.
 func NewReconnect[T any](info delegate.ServerInfo,
-	factory delegate.ClienTransportFactory[T],
+	factory TransportFactory[T],
 	ops ...SetOption,
 ) (d ReconnectDelegate[T], err error) {
 	transport, err := factory.New()
@@ -33,10 +33,24 @@ func NewReconnect[T any](info delegate.ServerInfo,
 	return
 }
 
+// NewReconnectWithoutInfo for tests only.
+func NewReconnectWithoutInfo[T any](factory TransportFactory[T],
+	closedFlag *uint32,
+	transport *atomic.Value,
+	options Options,
+) ReconnectDelegate[T] {
+	return ReconnectDelegate[T]{
+		factory:    factory,
+		closedFlag: closedFlag,
+		transport:  transport,
+		options:    options,
+	}
+}
+
 // ReconnectDelegate implements the base.ClientReconnectDelegate interface.
 type ReconnectDelegate[T any] struct {
 	info       delegate.ServerInfo
-	factory    delegate.ClienTransportFactory[T]
+	factory    TransportFactory[T]
 	closedFlag *uint32
 	transport  *atomic.Value
 	options    Options
@@ -47,36 +61,37 @@ func (d ReconnectDelegate[T]) Options() Options {
 }
 
 func (d ReconnectDelegate[T]) LocalAddr() net.Addr {
-	return d.getTransport().LocalAddr()
+	return d.Transport().LocalAddr()
 }
 
 func (d ReconnectDelegate[T]) RemoteAddr() net.Addr {
-	return d.getTransport().RemoteAddr()
+	return d.Transport().RemoteAddr()
 }
 
 func (d ReconnectDelegate[T]) SetSendDeadline(deadline time.Time) error {
-	return d.getTransport().SetSendDeadline(deadline)
+	return d.Transport().SetSendDeadline(deadline)
 }
 
-func (d ReconnectDelegate[T]) Send(seq base.Seq, cmd base.Cmd[T]) (err error) {
-	return d.getTransport().Send(seq, cmd)
+func (d ReconnectDelegate[T]) Send(seq base.Seq, cmd base.Cmd[T]) (n int,
+	err error) {
+	return d.Transport().Send(seq, cmd)
 }
 
 func (d ReconnectDelegate[T]) Flush() error {
-	return d.getTransport().Flush()
+	return d.Transport().Flush()
 }
 
 func (d ReconnectDelegate[T]) SetReceiveDeadline(deadline time.Time) error {
-	return d.getTransport().SetReceiveDeadline(deadline)
+	return d.Transport().SetReceiveDeadline(deadline)
 }
 
 func (d ReconnectDelegate[T]) Receive() (seq base.Seq, result base.Result,
-	err error) {
-	return d.getTransport().Receive()
+	n int, err error) {
+	return d.Transport().Receive()
 }
 
 func (d ReconnectDelegate[T]) Close() (err error) {
-	err = d.getTransport().Close()
+	err = d.Transport().Close()
 	if err != nil {
 		return
 	}
@@ -87,7 +102,7 @@ func (d ReconnectDelegate[T]) Close() (err error) {
 }
 
 func (d ReconnectDelegate[T]) Reconnect() (err error) {
-	var transport delegate.ClienTransport[T]
+	var transport Transport[T]
 Start:
 	for {
 		if d.closed() {
@@ -110,13 +125,12 @@ Start:
 	return
 }
 
-func (d ReconnectDelegate[T]) setTransport(
-	transport delegate.ClienTransport[T]) {
+func (d ReconnectDelegate[T]) setTransport(transport Transport[T]) {
 	d.transport.Store(transport)
 }
 
-func (d ReconnectDelegate[T]) getTransport() delegate.ClienTransport[T] {
-	return d.transport.Load().(delegate.ClienTransport[T])
+func (d ReconnectDelegate[T]) Transport() Transport[T] {
+	return d.transport.Load().(Transport[T])
 }
 
 func (d ReconnectDelegate[T]) closed() bool {
