@@ -4,7 +4,7 @@
 [![GoReportCard](https://goreportcard.com/badge/cmd-stream/base-go)](https://goreportcard.com/report/github.com/cmd-stream/base-go)
 [![codecov](https://codecov.io/gh/cmd-stream/delegate-go/graph/badge.svg?token=G8NN40DYJI)](https://codecov.io/gh/cmd-stream/delegate-go)
 
-`delegate-go` facilitates communication between the cmd-stream client and server.
+delegate-go facilitates communication between the cmd-stream client and server.
 It provides implementations of the `base.ClientDelegate` and `base.ServerDelegate` 
 interfaces, both of which rely on an abstract transport layer for data exchange.
 
