@@ -1,4 +1,4 @@
-package dser_test
+package dsrv_test
 
 import (
 	"context"

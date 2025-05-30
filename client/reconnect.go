@@ -11,10 +11,8 @@ import (
 )
 
 // NewReconnect creates a new ReconnectDelegate.
-func NewReconnect[T any](info delegate.ServerInfo,
-	factory TransportFactory[T],
-	ops ...SetOption,
-) (d ReconnectDelegate[T], err error) {
+func NewReconnect[T any](info delegate.ServerInfo, factory TransportFactory[T],
+	ops ...SetOption) (d ReconnectDelegate[T], err error) {
 	transport, err := factory.New()
 	if err != nil {
 		return

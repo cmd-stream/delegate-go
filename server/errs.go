@@ -1,4 +1,4 @@
-package dser
+package dsrv
 
 import "errors"
 
