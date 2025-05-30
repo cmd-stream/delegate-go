@@ -3,11 +3,11 @@ package mock
 import (
 	"net"
 
-	dser "github.com/cmd-stream/delegate-go/server"
+	dsrv "github.com/cmd-stream/delegate-go/server"
 	"github.com/ymz-ncnk/mok"
 )
 
-type NewFn func(conn net.Conn) (transport dser.Transport[any])
+type NewFn func(conn net.Conn) (transport dsrv.Transport[any])
 
 func NewTransportFactory() TransportFactory {
 	return TransportFactory{
@@ -25,11 +25,11 @@ func (mock TransportFactory) RegisterNew(fn NewFn) TransportFactory {
 }
 
 func (mock TransportFactory) New(conn net.Conn) (
-	transport dser.Transport[any]) {
+	transport dsrv.Transport[any]) {
 	vals, err := mock.Call("New", mok.SafeVal[net.Conn](conn))
 	if err != nil {
 		panic(err)
 	}
-	transport, _ = vals[0].(dser.Transport[any])
+	transport, _ = vals[0].(dsrv.Transport[any])
 	return
 }

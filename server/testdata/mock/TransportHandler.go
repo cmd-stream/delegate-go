@@ -3,11 +3,11 @@ package mock
 import (
 	"context"
 
-	dser "github.com/cmd-stream/delegate-go/server"
+	dsrv "github.com/cmd-stream/delegate-go/server"
 	"github.com/ymz-ncnk/mok"
 )
 
-type HandleFn func(ctx context.Context, transport dser.Transport[any]) error
+type HandleFn func(ctx context.Context, transport dsrv.Transport[any]) error
 
 func NewTransportHandler() TransportHandler {
 	return TransportHandler{
@@ -25,9 +25,9 @@ func (mock TransportHandler) RegisterHandle(fn HandleFn) TransportHandler {
 }
 
 func (mock TransportHandler) Handle(ctx context.Context,
-	transport dser.Transport[any]) (err error) {
+	transport dsrv.Transport[any]) (err error) {
 	vals, err := mock.Call("Handle", mok.SafeVal[context.Context](ctx),
-		mok.SafeVal[dser.Transport[any]](transport))
+		mok.SafeVal[dsrv.Transport[any]](transport))
 	if err != nil {
 		panic(err)
 	}
