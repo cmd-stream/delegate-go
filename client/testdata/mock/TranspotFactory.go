@@ -1,4 +1,4 @@
-package dcmock
+package mock
 
 import (
 	dcln "github.com/cmd-stream/delegate-go/client"

@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/cmd-stream/base-go"
+	"github.com/cmd-stream/core-go"
 	"github.com/cmd-stream/delegate-go"
 )
 
@@ -32,7 +32,7 @@ func NewWithoutInfo[T any](transport Transport[T]) (d Delegate[T]) {
 	return
 }
 
-// Delegate implements the base.ClientDelegate interface.
+// Delegate implements the core.ClientDelegate interface.
 type Delegate[T any] struct {
 	transport Transport[T]
 	options   Options
@@ -54,7 +54,7 @@ func (d Delegate[T]) SetSendDeadline(deadline time.Time) error {
 	return d.transport.SetSendDeadline(deadline)
 }
 
-func (d Delegate[T]) Send(seq base.Seq, cmd base.Cmd[T]) (n int, err error) {
+func (d Delegate[T]) Send(seq core.Seq, cmd core.Cmd[T]) (n int, err error) {
 	return d.transport.Send(seq, cmd)
 }
 
@@ -66,7 +66,7 @@ func (d Delegate[T]) SetReceiveDeadline(deadline time.Time) error {
 	return d.transport.SetReceiveDeadline(deadline)
 }
 
-func (d Delegate[T]) Receive() (seq base.Seq, result base.Result, n int,
+func (d Delegate[T]) Receive() (seq core.Seq, result core.Result, n int,
 	err error) {
 	return d.transport.Receive()
 }

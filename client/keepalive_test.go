@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cmd-stream/base-go"
-	bcmock "github.com/cmd-stream/base-go/client/testdata/mock"
+	"github.com/cmd-stream/core-go"
+	cmock "github.com/cmd-stream/core-go/client/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
@@ -19,17 +19,17 @@ func TestKeepaliveDelegate(t *testing.T) {
 
 	t.Run("Receive should not return PongResult", func(t *testing.T) {
 		var (
-			wantSeq      base.Seq    = 0
-			wantResult   base.Result = nil
+			wantSeq      core.Seq    = 0
+			wantResult   core.Result = nil
 			wantN        int         = 1
 			wantErr                  = errors.New("receive error")
 			wantCloseErr error       = nil
-			d                        = bcmock.NewDelegate().RegisterReceive(
-				func() (seq base.Seq, result base.Result, n int, err error) {
+			d                        = cmock.NewDelegate().RegisterReceive(
+				func() (seq core.Seq, result core.Result, n int, err error) {
 					return 0, delegate.PongResult{}, 2, nil
 				},
 			).RegisterReceive(
-				func() (seq base.Seq, result base.Result, n int, err error) {
+				func() (seq core.Seq, result core.Result, n int, err error) {
 					n = wantN
 					err = wantErr
 					return
@@ -63,14 +63,14 @@ func TestKeepaliveDelegate(t *testing.T) {
 				start              = time.Now()
 				wantKeepaliveTime  = 2 * 200 * time.Millisecond
 				wantKeepaliveIntvl = 200 * time.Millisecond
-				d                  = bcmock.NewDelegate().RegisterNSetSendDeadline(2,
+				d                  = cmock.NewDelegate().RegisterNSetSendDeadline(2,
 					func(deadline time.Time) (err error) {
 						wantDeadline := time.Time{}
 						asserterror.SameTime(deadline, wantDeadline, delta, t)
 						return
 					},
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
+					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						var (
 							wantTime   = start.Add(wantKeepaliveTime)
 							actualTime = time.Now()
@@ -83,7 +83,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 				).RegisterFlush(
 					func() (err error) { return nil },
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
+					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						var (
 							wantTime   = start.Add(wantKeepaliveTime).Add(wantKeepaliveIntvl)
 							actualTime = time.Now()
@@ -124,7 +124,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			flushDelay         = 200 * time.Millisecond
 			wantKeepaliveTime  = 2 * 200 * time.Millisecond
 			wantKeepaliveIntvl = 200 * time.Millisecond
-			d                  = bcmock.NewDelegate().RegisterFlush(
+			d                  = cmock.NewDelegate().RegisterFlush(
 				func() (err error) { return nil },
 			).RegisterSetSendDeadline(
 				func(deadline time.Time) (err error) {
@@ -133,7 +133,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 					return
 				},
 			).RegisterSend(
-				func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
+				func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 					var (
 						wantTime   = start.Add(flushDelay).Add(wantKeepaliveTime)
 						actualTime = time.Now()
@@ -170,7 +170,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 
 	t.Run("Close should cancel ping sending", func(t *testing.T) {
 		var (
-			d = bcmock.NewDelegate().RegisterClose(
+			d = cmock.NewDelegate().RegisterClose(
 				func() (err error) { return nil },
 			)
 			mocks = []*mok.Mock{d.Mock}
@@ -190,12 +190,12 @@ func TestKeepaliveDelegate(t *testing.T) {
 			var (
 				done    = make(chan struct{})
 				wantErr = errors.New("close error")
-				d       = bcmock.NewDelegate().RegisterClose(
+				d       = cmock.NewDelegate().RegisterClose(
 					func() (err error) { return wantErr },
 				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) { return 1, nil },
+					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) { return 1, nil },
 				).RegisterFlush(
 					func() (err error) { defer close(done); return nil },
 				).RegisterClose(
@@ -227,10 +227,10 @@ func TestKeepaliveDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				done = make(chan struct{})
-				d    = bcmock.NewDelegate().RegisterSetSendDeadline(
+				d    = cmock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
+					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						defer close(done)
 						return 1, errors.New("send error")
 					},
@@ -261,12 +261,12 @@ func TestKeepaliveDelegate(t *testing.T) {
 			var (
 				done    = make(chan struct{})
 				wantErr = errors.New("flush error")
-				d       = bcmock.NewDelegate().RegisterFlush(
+				d       = cmock.NewDelegate().RegisterFlush(
 					func() (err error) { return wantErr },
 				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
+					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						defer close(done)
 						return
 					},

@@ -1,4 +1,4 @@
-package dsmock
+package mock
 
 import (
 	"net"

@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/cmd-stream/base-go"
-	bcln "github.com/cmd-stream/base-go/client"
+	"github.com/cmd-stream/core-go"
+	ccln "github.com/cmd-stream/core-go/client"
 	"github.com/cmd-stream/delegate-go"
 )
 
@@ -45,7 +45,7 @@ func NewReconnectWithoutInfo[T any](factory TransportFactory[T],
 	}
 }
 
-// ReconnectDelegate implements the base.ClientReconnectDelegate interface.
+// ReconnectDelegate implements the core.ClientReconnectDelegate interface.
 type ReconnectDelegate[T any] struct {
 	info       delegate.ServerInfo
 	factory    TransportFactory[T]
@@ -70,7 +70,7 @@ func (d ReconnectDelegate[T]) SetSendDeadline(deadline time.Time) error {
 	return d.Transport().SetSendDeadline(deadline)
 }
 
-func (d ReconnectDelegate[T]) Send(seq base.Seq, cmd base.Cmd[T]) (n int,
+func (d ReconnectDelegate[T]) Send(seq core.Seq, cmd core.Cmd[T]) (n int,
 	err error) {
 	return d.Transport().Send(seq, cmd)
 }
@@ -83,7 +83,7 @@ func (d ReconnectDelegate[T]) SetReceiveDeadline(deadline time.Time) error {
 	return d.Transport().SetReceiveDeadline(deadline)
 }
 
-func (d ReconnectDelegate[T]) Receive() (seq base.Seq, result base.Result,
+func (d ReconnectDelegate[T]) Receive() (seq core.Seq, result core.Result,
 	n int, err error) {
 	return d.Transport().Receive()
 }
@@ -104,7 +104,7 @@ func (d ReconnectDelegate[T]) Reconnect() (err error) {
 Start:
 	for {
 		if d.closed() {
-			return bcln.ErrClosed
+			return ccln.ErrClosed
 		}
 		transport, err = d.factory.New()
 		if err != nil {

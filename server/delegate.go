@@ -25,7 +25,7 @@ func New[T any](info delegate.ServerInfo, factory TransportFactory[T],
 	return
 }
 
-// Delegate implements the base.ServerDelegate interface.
+// Delegate implements the core.ServerDelegate interface.
 //
 // It initializes the connection by sending ServerInfo to the client.
 type Delegate[T any] struct {

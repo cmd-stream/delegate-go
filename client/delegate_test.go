@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cmd-stream/base-go"
-	bmock "github.com/cmd-stream/base-go/testdata/mock"
+	"github.com/cmd-stream/core-go"
+	cmock "github.com/cmd-stream/core-go/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
 	dcln "github.com/cmd-stream/delegate-go/client"
-	dcmock "github.com/cmd-stream/delegate-go/client/testdata/mock"
+	mock "github.com/cmd-stream/delegate-go/client/testdata/mock"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -26,11 +26,11 @@ func TestDelegate(t *testing.T) {
 	t.Run("New should check ServerInfo", func(t *testing.T) {
 		var (
 			wantErr   error = nil
-			conn            = bmock.NewConn()
+			conn            = cmock.NewConn()
 			transport       = makeClientTransport(serverInfo)
 			mocks           = []*mok.Mock{conn.Mock, transport.Mock}
 		)
-		_, err := dcln.New(serverInfo, transport, ops...)
+		_, err := dcln.New[any](serverInfo, transport, ops...)
 		asserterror.EqualError(err, wantErr, t)
 		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 	})
@@ -39,7 +39,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Transport.SetReceiveDeadline")
-				transport = dcmock.NewTransport().RegisterSetReceiveDeadline(
+				transport = mock.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return wantErr
 					},
@@ -55,7 +55,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Transport.ReceiveServerInfo error")
-				transport = dcmock.NewTransport().RegisterSetReceiveDeadline(
+				transport = mock.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -76,7 +76,7 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantErr         = dcln.ErrServerInfoMismatch
 				wrongServerInfo = []byte{1}
-				transport       = dcmock.NewTransport().RegisterSetReceiveDeadline(
+				transport       = mock.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -98,7 +98,7 @@ func TestDelegate(t *testing.T) {
 			wantDeadline       = time.Now().Add(d)
 			wantErr      error = nil
 			ops                = []dcln.SetOption{dcln.WithServerInfoReceiveDuration(d)}
-			transport          = dcmock.NewTransport().RegisterSetReceiveDeadline(
+			transport          = mock.NewTransport().RegisterSetReceiveDeadline(
 				func(deadline time.Time) (err error) {
 					asserterror.SameTime(deadline, wantDeadline, delta, t)
 					return
@@ -124,14 +124,14 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantN     int = 1
 				wantErr       = errors.New("Delegate.Send error")
-				transport     = dcmock.NewTransport().RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
+				transport     = mock.NewTransport().RegisterSend(
+					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return wantN, wantErr
 					},
 				)
 				delegate = dcln.NewWithoutInfo(transport)
 			)
-			n, err := delegate.Send(1, bmock.NewCmd())
+			n, err := delegate.Send(1, cmock.NewCmd())
 			asserterror.Equal(n, wantN, t)
 			asserterror.EqualError(err, wantErr, t)
 		})
@@ -139,12 +139,12 @@ func TestDelegate(t *testing.T) {
 	t.Run("Transport.Send should send same seq and cmd as Send",
 		func(t *testing.T) {
 			var (
-				wantSeq   base.Seq = 1
-				wantCmd            = bmock.NewCmd()
+				wantSeq   core.Seq = 1
+				wantCmd            = cmock.NewCmd()
 				wantN     int      = 2
 				wantErr   error    = nil
-				transport          = dcmock.NewTransport().RegisterSend(
-					func(seq base.Seq, cmd base.Cmd[any]) (n int, err error) {
+				transport          = mock.NewTransport().RegisterSend(
+					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						asserterror.Equal(seq, wantSeq, t)
 						asserterror.EqualDeep(cmd, wantCmd, t)
 						return wantN, wantErr
@@ -162,12 +162,12 @@ func TestDelegate(t *testing.T) {
 	t.Run("Receive should return same seq and cmd as Tranposrt.Receive",
 		func(t *testing.T) {
 			var (
-				wantSeq    base.Seq = 1
-				wantResult          = bmock.NewResult()
+				wantSeq    core.Seq = 1
+				wantResult          = cmock.NewResult()
 				wantN      int      = 3
 				wantErr             = errors.New("receive failed")
-				transport           = dcmock.NewTransport().RegisterReceive(
-					func() (seq base.Seq, r base.Result, n int, err error) {
+				transport           = mock.NewTransport().RegisterReceive(
+					func() (seq core.Seq, r core.Result, n int, err error) {
 						return wantSeq, wantResult, wantN, wantErr
 					},
 				)
@@ -195,7 +195,7 @@ func TestDelegate(t *testing.T) {
 	t.Run("LocalAddr should return Transport.LocalAddr", func(t *testing.T) {
 		var (
 			wantAddr  = &net.IPAddr{IP: net.ParseIP("127.0.0.1:9000")}
-			transport = dcmock.NewTransport().RegisterLocalAddr(
+			transport = mock.NewTransport().RegisterLocalAddr(
 				func() (a net.Addr) {
 					return wantAddr
 				},
@@ -211,7 +211,7 @@ func TestDelegate(t *testing.T) {
 	t.Run("RemoteAddr should return Transport.RemoteAddr", func(t *testing.T) {
 		var (
 			wantAddr  = &net.IPAddr{IP: net.ParseIP("127.0.0.1:9000")}
-			transport = dcmock.NewTransport().RegisterRemoteAddr(
+			transport = mock.NewTransport().RegisterRemoteAddr(
 				func() (addr net.Addr) {
 					return wantAddr
 				},
@@ -228,7 +228,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Close error")
-				transport = dcmock.NewTransport().RegisterClose(
+				transport = mock.NewTransport().RegisterClose(
 					func() (err error) {
 						return wantErr
 					},
@@ -241,8 +241,8 @@ func TestDelegate(t *testing.T) {
 
 }
 
-func makeClientTransport(serverInfo delegate.ServerInfo) dcmock.Transport {
-	return dcmock.NewTransport().RegisterSetReceiveDeadline(
+func makeClientTransport(serverInfo delegate.ServerInfo) mock.Transport {
+	return mock.NewTransport().RegisterSetReceiveDeadline(
 		func(deadline time.Time) (err error) {
 			return nil
 		},

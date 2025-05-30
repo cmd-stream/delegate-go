@@ -4,8 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cmd-stream/base-go"
-	bcln "github.com/cmd-stream/base-go/client"
+	"github.com/cmd-stream/core-go"
+	ccln "github.com/cmd-stream/core-go/client"
 	"github.com/cmd-stream/delegate-go"
 )
 
@@ -15,7 +15,7 @@ const (
 )
 
 // NewKeepalive creates a new KeepaliveDelegate.
-func NewKeepalive[T any](d bcln.Delegate[T], ops ...SetKeepaliveOption) (
+func NewKeepalive[T any](d ccln.Delegate[T], ops ...SetKeepaliveOption) (
 	kd KeepaliveDelegate[T]) {
 	kd.options = KeepaliveOptions{
 		KeepaliveTime:  KeepaliveTime,
@@ -28,19 +28,19 @@ func NewKeepalive[T any](d bcln.Delegate[T], ops ...SetKeepaliveOption) (
 	return
 }
 
-// KeepaliveDelegate implements the base.ClientDelegate interface.
+// KeepaliveDelegate implements the core.ClientDelegate interface.
 //
 // When there are no Commands to send, it initiates a Ping-Pong exchange with
 // the server. It sends a Ping Command and expects a Pong Result, both
 // represented as a single zero byte (like a ball being passed).
 type KeepaliveDelegate[T any] struct {
-	bcln.Delegate[T]
+	ccln.Delegate[T]
 	alive   chan struct{}
 	done    chan struct{}
 	options KeepaliveOptions
 }
 
-func (d KeepaliveDelegate[T]) Receive() (seq base.Seq, result base.Result,
+func (d KeepaliveDelegate[T]) Receive() (seq core.Seq, result core.Result,
 	n int, err error) {
 Start:
 	seq, result, n, err = d.Delegate.Receive()
@@ -94,7 +94,7 @@ func keepalive[T any](d KeepaliveDelegate[T], muSn *sync.Mutex) {
 	}
 }
 
-func ping[T any](muSn *sync.Mutex, seq base.Seq, d KeepaliveDelegate[T]) (
+func ping[T any](muSn *sync.Mutex, seq core.Seq, d KeepaliveDelegate[T]) (
 	n int, err error) {
 	muSn.Lock()
 	if err = d.SetSendDeadline(time.Time{}); err != nil {

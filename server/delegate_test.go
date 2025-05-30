@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	bmock "github.com/cmd-stream/base-go/testdata/mock"
+	cmock "github.com/cmd-stream/core-go/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
-	dser "github.com/cmd-stream/delegate-go/server"
-	dsmock "github.com/cmd-stream/delegate-go/server/testdata/mock"
+	dsrv "github.com/cmd-stream/delegate-go/server"
+	mock "github.com/cmd-stream/delegate-go/server/testdata/mock"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -21,15 +21,15 @@ func TestDelegate(t *testing.T) {
 	var (
 		delta                      = 100 * time.Millisecond
 		wantServerInfoSendDuration = time.Second
-		ops                        = []dser.SetOption{
-			dser.WithServerInfoSendDuration(wantServerInfoSendDuration),
+		ops                        = []dsrv.SetOption{
+			dsrv.WithServerInfoSendDuration(wantServerInfoSendDuration),
 		}
 		serverInfo = delegate.ServerInfo([]byte("server info"))
 	)
 
 	t.Run("If ServerInfo len is zero, New should panic",
 		func(t *testing.T) {
-			var wantErr = dser.ErrEmptyInfo
+			var wantErr = dsrv.ErrEmptyInfo
 			defer func() {
 				if r := recover(); r != nil {
 					err := r.(error)
@@ -38,15 +38,15 @@ func TestDelegate(t *testing.T) {
 					}
 				}
 			}()
-			dser.New[any](nil, nil, nil, ops...)
+			dsrv.New[any](nil, nil, nil, ops...)
 		})
 
 	t.Run("If send ServerInfo fails with an error, Handle should return it",
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("send ServerInfo error")
-				conn      = bmock.NewConn()
-				transport = dsmock.NewTransport().RegisterSetSendDeadline(
+				conn      = cmock.NewConn()
+				transport = mock.NewTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSendServerInfo(
 					func(info delegate.ServerInfo) (err error) { return wantErr },
@@ -54,7 +54,7 @@ func TestDelegate(t *testing.T) {
 					func() (err error) { return nil },
 				)
 				factory  = makeTransportFactory(conn, transport, t)
-				delegate = dser.New(serverInfo, factory, nil, ops...)
+				delegate = dsrv.New(serverInfo, factory, nil, ops...)
 				mocks    = []*mok.Mock{conn.Mock, transport.Mock, factory.Mock}
 			)
 			err := delegate.Handle(context.Background(), conn)
@@ -66,16 +66,16 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("done")
-				conn      = bmock.NewConn()
+				conn      = cmock.NewConn()
 				transport = makeTransport(time.Now(), serverInfo,
 					wantServerInfoSendDuration, delta, t)
 				factory = makeTransportFactory(conn, transport, t)
-				handler = dsmock.NewTransportHandler().RegisterHandle(
-					func(ctx context.Context, transport dser.Transport[any]) error {
+				handler = mock.NewTransportHandler().RegisterHandle(
+					func(ctx context.Context, transport dsrv.Transport[any]) error {
 						return wantErr
 					},
 				)
-				delegate = dser.New(serverInfo, factory, handler, ops...)
+				delegate = dsrv.New(serverInfo, factory, handler, ops...)
 				mocks    = []*mok.Mock{conn.Mock, transport.Mock, factory.Mock,
 					handler.Mock}
 			)
@@ -88,14 +88,14 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("SendServerInfo error")
-				conn      = bmock.NewConn()
-				transport = dsmock.NewTransport().RegisterSetSendDeadline(
+				conn      = cmock.NewConn()
+				transport = mock.NewTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return wantErr },
 				).RegisterClose(
 					func() (err error) { return nil },
 				)
 				factory  = makeTransportFactory(conn, transport, t)
-				delegate = dser.New(serverInfo, factory, nil, ops...)
+				delegate = dsrv.New(serverInfo, factory, nil, ops...)
 				err      = delegate.Handle(context.Background(), conn)
 			)
 			asserterror.EqualError(err, wantErr, t)
@@ -104,11 +104,11 @@ func TestDelegate(t *testing.T) {
 }
 
 func makeTransportFactory(conn net.Conn,
-	transport dser.Transport[any],
+	transport dsrv.Transport[any],
 	t *testing.T,
-) dsmock.TransportFactory {
-	return dsmock.NewTransportFactory().RegisterNew(
-		func(c net.Conn) dser.Transport[any] {
+) mock.TransportFactory {
+	return mock.NewTransportFactory().RegisterNew(
+		func(c net.Conn) dsrv.Transport[any] {
 			if !reflect.DeepEqual(conn, conn) {
 				t.Errorf("unepxected conn, want '%v' actual '%v'", conn, c)
 			}
@@ -121,8 +121,8 @@ func makeTransport(startTime time.Time, info delegate.ServerInfo,
 	serverInfoSendDuration time.Duration,
 	delta time.Duration,
 	t *testing.T,
-) dsmock.Transport {
-	return dsmock.NewTransport().RegisterSetSendDeadline(
+) mock.Transport {
+	return mock.NewTransport().RegisterSetSendDeadline(
 		func(deadline time.Time) (err error) {
 			wantDeadline := startTime.Add(serverInfoSendDuration)
 			asserterror.SameTime(deadline, wantDeadline, delta, t)

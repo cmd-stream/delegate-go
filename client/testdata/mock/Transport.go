@@ -1,10 +1,10 @@
-package dcmock
+package mock
 
 import (
 	"net"
 	"time"
 
-	"github.com/cmd-stream/base-go"
+	"github.com/cmd-stream/core-go"
 	"github.com/cmd-stream/delegate-go"
 	"github.com/ymz-ncnk/mok"
 )
@@ -13,10 +13,10 @@ type LocalAddrFn func() (addr net.Addr)
 type RemoteAddrFn func() (addr net.Addr)
 type ReceiveServerInfoFn func() (info delegate.ServerInfo, err error)
 type SetSendDeadlineFn func(deadline time.Time) (err error)
-type SendFn func(seq base.Seq, cmd base.Cmd[any]) (n int, err error)
+type SendFn func(seq core.Seq, cmd core.Cmd[any]) (n int, err error)
 type FlushFn func() (err error)
 type SetReceiveDeadlineFn func(deadline time.Time) (err error)
-type ReceiveFn func() (seq base.Seq, result base.Result, n int, err error)
+type ReceiveFn func() (seq core.Seq, result core.Result, n int, err error)
 type CloseFn func() (err error)
 
 func NewTransport() Transport {
@@ -112,9 +112,9 @@ func (mock Transport) SetSendDeadline(deadline time.Time) (err error) {
 	return
 }
 
-func (mock Transport) Send(seq base.Seq, cmd base.Cmd[any]) (n int,
+func (mock Transport) Send(seq core.Seq, cmd core.Cmd[any]) (n int,
 	err error) {
-	result, err := mock.Call("Send", seq, mok.SafeVal[base.Cmd[any]](cmd))
+	result, err := mock.Call("Send", seq, mok.SafeVal[core.Cmd[any]](cmd))
 	if err != nil {
 		panic(err)
 	}
@@ -141,14 +141,14 @@ func (mock Transport) SetReceiveDeadline(deadline time.Time) (err error) {
 	return
 }
 
-func (mock Transport) Receive() (seq base.Seq, result base.Result, n int,
+func (mock Transport) Receive() (seq core.Seq, result core.Result, n int,
 	err error) {
 	vals, err := mock.Call("Receive")
 	if err != nil {
 		panic(err)
 	}
-	seq = vals[0].(base.Seq)
-	result, _ = vals[1].(base.Result)
+	seq = vals[0].(core.Seq)
+	result, _ = vals[1].(core.Result)
 	n = vals[2].(int)
 	err, _ = vals[3].(error)
 	return

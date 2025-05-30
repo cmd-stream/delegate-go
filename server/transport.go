@@ -4,7 +4,7 @@ import (
 	"context"
 	"net"
 
-	"github.com/cmd-stream/base-go"
+	"github.com/cmd-stream/core-go"
 	"github.com/cmd-stream/delegate-go"
 )
 
@@ -18,7 +18,7 @@ type TransportFactory[T any] interface {
 //
 // It is used by the delegate to receive Commands and send Results.
 type Transport[T any] interface {
-	delegate.Transport[base.Result, base.Cmd[T]]
+	delegate.Transport[core.Result, core.Cmd[T]]
 	SendServerInfo(info delegate.ServerInfo) error
 }
 
