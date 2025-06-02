@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cmd-stream/core-go"
-	ccln "github.com/cmd-stream/core-go/client"
+	cln "github.com/cmd-stream/core-go/client"
 	"github.com/cmd-stream/delegate-go"
 )
 
@@ -104,7 +104,7 @@ func (d ReconnectDelegate[T]) Reconnect() (err error) {
 Start:
 	for {
 		if d.closed() {
-			return ccln.ErrClosed
+			return cln.ErrClosed
 		}
 		transport, err = d.factory.New()
 		if err != nil {
