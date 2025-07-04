@@ -1,4 +1,4 @@
-package dcln
+package client
 
 import (
 	"github.com/cmd-stream/core-go"

@@ -1,4 +1,4 @@
-package dsrv
+package server
 
 import "errors"
 

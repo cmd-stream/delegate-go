@@ -1,4 +1,4 @@
-package dcln_test
+package client_test
 
 import (
 	"errors"

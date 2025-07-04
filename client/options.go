@@ -1,4 +1,4 @@
-package dcln
+package client
 
 import "time"
 
