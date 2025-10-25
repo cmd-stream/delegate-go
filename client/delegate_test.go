@@ -16,7 +16,6 @@ import (
 )
 
 func TestDelegate(t *testing.T) {
-
 	var (
 		delta      = 100 * time.Millisecond
 		ops        = []dcln.SetOption{dcln.WithServerInfoReceiveDuration(0)}
@@ -238,7 +237,6 @@ func TestDelegate(t *testing.T) {
 			err := delegate.Close()
 			asserterror.EqualError(err, wantErr, t)
 		})
-
 }
 
 func makeClientTransport(serverInfo delegate.ServerInfo) mock.Transport {

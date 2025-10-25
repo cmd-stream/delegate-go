@@ -16,7 +16,8 @@ const (
 
 // NewKeepalive creates a new KeepaliveDelegate.
 func NewKeepalive[T any](d ccln.Delegate[T], ops ...SetKeepaliveOption) (
-	kd KeepaliveDelegate[T]) {
+	kd KeepaliveDelegate[T],
+) {
 	kd.options = KeepaliveOptions{
 		KeepaliveTime:  KeepaliveTime,
 		KeepaliveIntvl: KeepaliveIntvl,
@@ -41,7 +42,8 @@ type KeepaliveDelegate[T any] struct {
 }
 
 func (d KeepaliveDelegate[T]) Receive() (seq core.Seq, result core.Result,
-	n int, err error) {
+	n int, err error,
+) {
 Start:
 	seq, result, n, err = d.Delegate.Receive()
 	if err != nil {
@@ -95,7 +97,8 @@ func keepalive[T any](d KeepaliveDelegate[T], muSn *sync.Mutex) {
 }
 
 func ping[T any](muSn *sync.Mutex, seq core.Seq, d KeepaliveDelegate[T]) (
-	n int, err error) {
+	n int, err error,
+) {
 	muSn.Lock()
 	if err = d.SetSendDeadline(time.Time{}); err != nil {
 		muSn.Unlock()

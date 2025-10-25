@@ -18,5 +18,4 @@ func TestOptions(t *testing.T) {
 		t.Errorf("unexpected ServerInfoSendDuration, want %v actual %v",
 			wantServerInfoSendDuration, o.ServerInfoSendDuration)
 	}
-
 }

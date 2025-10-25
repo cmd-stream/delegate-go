@@ -14,14 +14,13 @@ import (
 )
 
 func TestKeepaliveDelegate(t *testing.T) {
-
-	var delta = 100 * time.Millisecond
+	delta := 100 * time.Millisecond
 
 	t.Run("Receive should not return PongResult", func(t *testing.T) {
 		var (
 			wantSeq      core.Seq    = 0
 			wantResult   core.Result = nil
-			wantN        int         = 1
+			wantN                    = 1
 			wantErr                  = errors.New("receive error")
 			wantCloseErr error       = nil
 			d                        = cmock.NewDelegate().RegisterReceive(
@@ -296,5 +295,4 @@ func TestKeepaliveDelegate(t *testing.T) {
 			asserterror.EqualError(err, nil, t)
 			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 		})
-
 }

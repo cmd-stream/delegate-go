@@ -12,7 +12,8 @@ import (
 
 // NewReconnect creates a new ReconnectDelegate.
 func NewReconnect[T any](info delegate.ServerInfo, factory TransportFactory[T],
-	ops ...SetOption) (d ReconnectDelegate[T], err error) {
+	ops ...SetOption,
+) (d ReconnectDelegate[T], err error) {
 	transport, err := factory.New()
 	if err != nil {
 		return
@@ -71,7 +72,8 @@ func (d ReconnectDelegate[T]) SetSendDeadline(deadline time.Time) error {
 }
 
 func (d ReconnectDelegate[T]) Send(seq core.Seq, cmd core.Cmd[T]) (n int,
-	err error) {
+	err error,
+) {
 	return d.Transport().Send(seq, cmd)
 }
 
@@ -84,7 +86,8 @@ func (d ReconnectDelegate[T]) SetReceiveDeadline(deadline time.Time) error {
 }
 
 func (d ReconnectDelegate[T]) Receive() (seq core.Seq, result core.Result,
-	n int, err error) {
+	n int, err error,
+) {
 	return d.Transport().Receive()
 }
 

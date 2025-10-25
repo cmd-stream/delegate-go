@@ -1,3 +1,5 @@
+// Package delegate provides abstractions for client-server communication
+// in the cmd-stream-go library.
 package delegate
 
 import (

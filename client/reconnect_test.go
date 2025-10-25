@@ -19,7 +19,6 @@ import (
 )
 
 func TestReconnectDelegate(t *testing.T) {
-
 	var (
 		ops        = []dcln.SetOption{dcln.WithServerInfoReceiveDuration(0)}
 		serverInfo = delegate.ServerInfo([]byte("server info"))
@@ -430,5 +429,4 @@ func TestReconnectDelegate(t *testing.T) {
 			asserterror.EqualError(err, wantErr, t)
 			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 		})
-
 }

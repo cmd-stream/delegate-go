@@ -6,7 +6,7 @@ import (
 	"github.com/mus-format/mus-stream-go/raw"
 )
 
-var byteSliceMUS = ord.NewSliceSer[byte](raw.Byte)
+var byteSliceMUS = ord.NewSliceSer(raw.Byte)
 
 // ServerInfo allows the client to identify a compatible server.
 type ServerInfo []byte
@@ -17,12 +17,14 @@ var ServerInfoMUS = serverInfoMUS{}
 type serverInfoMUS struct{}
 
 func (s serverInfoMUS) Marshal(info ServerInfo, w muss.Writer) (n int,
-	err error) {
+	err error,
+) {
 	return byteSliceMUS.Marshal(info, w)
 }
 
 func (s serverInfoMUS) Unmarshal(r muss.Reader) (info ServerInfo, n int,
-	err error) {
+	err error,
+) {
 	return byteSliceMUS.Unmarshal(r)
 }
 

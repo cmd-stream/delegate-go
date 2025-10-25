@@ -17,7 +17,6 @@ import (
 )
 
 func TestDelegate(t *testing.T) {
-
 	var (
 		delta                      = 100 * time.Millisecond
 		wantServerInfoSendDuration = time.Second
@@ -29,7 +28,7 @@ func TestDelegate(t *testing.T) {
 
 	t.Run("If ServerInfo len is zero, New should panic",
 		func(t *testing.T) {
-			var wantErr = dsrv.ErrEmptyInfo
+			wantErr := dsrv.ErrEmptyInfo
 			defer func() {
 				if r := recover(); r != nil {
 					err := r.(error)
@@ -76,8 +75,10 @@ func TestDelegate(t *testing.T) {
 					},
 				)
 				delegate = dsrv.New(serverInfo, factory, handler, ops...)
-				mocks    = []*mok.Mock{conn.Mock, transport.Mock, factory.Mock,
-					handler.Mock}
+				mocks    = []*mok.Mock{
+					conn.Mock, transport.Mock, factory.Mock,
+					handler.Mock,
+				}
 			)
 			err := delegate.Handle(context.Background(), conn)
 			asserterror.EqualError(err, wantErr, t)
@@ -100,7 +101,6 @@ func TestDelegate(t *testing.T) {
 			)
 			asserterror.EqualError(err, wantErr, t)
 		})
-
 }
 
 func makeTransportFactory(conn net.Conn,

@@ -18,7 +18,6 @@ func TestOptions(t *testing.T) {
 		t.Errorf("unexpected ServerInfoReceiveDuration, want %v actual %v",
 			wantServerInfoReceiveDuration, o.ServerInfoReceiveDuration)
 	}
-
 }
 
 func TestKeepAliveOptions(t *testing.T) {
