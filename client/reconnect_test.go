@@ -44,8 +44,8 @@ func TestReconnectDelegate(t *testing.T) {
 	t.Run("If ServerInfo check fails with an error, NewReconnect should return it",
 		func(t *testing.T) {
 			var (
-				wantErr   error = errors.New("SetReceiveDeadline error")
-				transport       = mock.NewTransport().RegisterSetReceiveDeadline(
+				wantErr   = errors.New("SetReceiveDeadline error")
+				transport = mock.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return wantErr
 					})
@@ -64,8 +64,8 @@ func TestReconnectDelegate(t *testing.T) {
 	t.Run("If ClientTransportFactory.New fails with an error, NewReconnect should return it",
 		func(t *testing.T) {
 			var (
-				wantErr error = errors.New("transport creation error")
-				factory       = mock.NewTransportFactory().RegisterNew(
+				wantErr = errors.New("transport creation error")
+				factory = mock.NewTransportFactory().RegisterNew(
 					func() (dcln.Transport[any], error) {
 						return nil, wantErr
 					},
@@ -144,9 +144,9 @@ func TestReconnectDelegate(t *testing.T) {
 	t.Run("If Transport.Send fails with an error, Send should return it",
 		func(t *testing.T) {
 			var (
-				wantN   int = 1
-				wantErr     = errors.New("Delegate.Send error")
-				clnTran     = mock.NewTransport().RegisterSend(
+				wantN   = 1
+				wantErr = errors.New("Delegate.Send error")
+				clnTran = mock.NewTransport().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return wantN, wantErr
 					},
@@ -170,7 +170,7 @@ func TestReconnectDelegate(t *testing.T) {
 			var (
 				wantSeq core.Seq = 1
 				wantCmd          = cmock.NewCmd()
-				wantN   int      = 2
+				wantN            = 2
 				wantErr error    = nil
 				clnTran          = mock.NewTransport().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
@@ -198,7 +198,7 @@ func TestReconnectDelegate(t *testing.T) {
 			var (
 				wantSeq    core.Seq = 1
 				wantResult          = cmock.NewResult()
-				wantN      int      = 3
+				wantN               = 3
 				wantErr             = errors.New("receive failed")
 				clnTran             = mock.NewTransport().RegisterReceive(
 					func() (seq core.Seq, r core.Result, n int, err error) {

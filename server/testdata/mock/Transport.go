@@ -9,15 +9,17 @@ import (
 	"github.com/ymz-ncnk/mok"
 )
 
-type LocalAddrFn func() (addr net.Addr)
-type RemoteAddrFn func() (addr net.Addr)
-type SetSendDeadlineFn func(deadline time.Time) (err error)
-type SendFn func(seq core.Seq, result core.Result) (n int, err error)
-type FlushFn func() (err error)
-type SetReceiveDeadlineFn func(deadline time.Time) (err error)
-type ReceiveFn func() (seq core.Seq, cmd core.Cmd[any], n int, err error)
-type CloseFn func() (err error)
-type SendServerInfo func(info delegate.ServerInfo) (err error)
+type (
+	LocalAddrFn          func() (addr net.Addr)
+	RemoteAddrFn         func() (addr net.Addr)
+	SetSendDeadlineFn    func(deadline time.Time) (err error)
+	SendFn               func(seq core.Seq, result core.Result) (n int, err error)
+	FlushFn              func() (err error)
+	SetReceiveDeadlineFn func(deadline time.Time) (err error)
+	ReceiveFn            func() (seq core.Seq, cmd core.Cmd[any], n int, err error)
+	CloseFn              func() (err error)
+	SendServerInfo       func(info delegate.ServerInfo) (err error)
+)
 
 func NewTransport() Transport {
 	return Transport{
@@ -50,7 +52,8 @@ func (mock Transport) RegisterSetSendDeadline(fn SetSendDeadlineFn) Transport {
 }
 
 func (mock Transport) RegisterNSetSendDeadline(n int,
-	fn SetSendDeadlineFn) Transport {
+	fn SetSendDeadlineFn,
+) Transport {
 	mock.RegisterN("SetSendDeadline", n, fn)
 	return mock
 }
@@ -81,7 +84,8 @@ func (mock Transport) RegisterSetReceiveDeadline(fn SetReceiveDeadlineFn) Transp
 }
 
 func (mock Transport) RegisterNSetReceiveDeadline(n int,
-	fn SetReceiveDeadlineFn) Transport {
+	fn SetReceiveDeadlineFn,
+) Transport {
 	mock.RegisterN("SetReceiveDeadline", n, fn)
 	return mock
 }
@@ -133,7 +137,8 @@ func (mock Transport) SetSendDeadline(deadline time.Time) (err error) {
 }
 
 func (mock Transport) Send(seq core.Seq, result core.Result) (n int,
-	err error) {
+	err error,
+) {
 	vals, err := mock.Call("Send", seq, mok.SafeVal[core.Result](result))
 	if err != nil {
 		panic(err)
@@ -162,7 +167,8 @@ func (mock Transport) SetReceiveDeadline(deadline time.Time) (err error) {
 }
 
 func (mock Transport) Receive() (seq core.Seq, cmd core.Cmd[any], n int,
-	err error) {
+	err error,
+) {
 	vals, err := mock.Call("Receive")
 	if err != nil {
 		panic(err)

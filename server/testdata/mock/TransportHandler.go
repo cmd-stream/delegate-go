@@ -25,7 +25,8 @@ func (mock TransportHandler) RegisterHandle(fn HandleFn) TransportHandler {
 }
 
 func (mock TransportHandler) Handle(ctx context.Context,
-	transport dsrv.Transport[any]) (err error) {
+	transport dsrv.Transport[any],
+) (err error) {
 	vals, err := mock.Call("Handle", mok.SafeVal[context.Context](ctx),
 		mok.SafeVal[dsrv.Transport[any]](transport))
 	if err != nil {

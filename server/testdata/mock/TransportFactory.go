@@ -25,7 +25,8 @@ func (mock TransportFactory) RegisterNew(fn NewFn) TransportFactory {
 }
 
 func (mock TransportFactory) New(conn net.Conn) (
-	transport dsrv.Transport[any]) {
+	transport dsrv.Transport[any],
+) {
 	vals, err := mock.Call("New", mok.SafeVal[net.Conn](conn))
 	if err != nil {
 		panic(err)

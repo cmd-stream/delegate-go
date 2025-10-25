@@ -23,7 +23,8 @@ func (mock TransportFactory) RegisterNew(fn NewFn) TransportFactory {
 }
 
 func (mock TransportFactory) New() (transport dcln.Transport[any],
-	err error) {
+	err error,
+) {
 	vals, err := mock.Call("New")
 	if err != nil {
 		panic(err)

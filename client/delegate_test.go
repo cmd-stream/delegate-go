@@ -29,7 +29,7 @@ func TestDelegate(t *testing.T) {
 			transport       = makeClientTransport(serverInfo)
 			mocks           = []*mok.Mock{conn.Mock, transport.Mock}
 		)
-		_, err := dcln.New[any](serverInfo, transport, ops...)
+		_, err := dcln.New(serverInfo, transport, ops...)
 		asserterror.EqualError(err, wantErr, t)
 		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
 	})
@@ -121,9 +121,9 @@ func TestDelegate(t *testing.T) {
 	t.Run("If Transport.Send fails with an error, Send should return it",
 		func(t *testing.T) {
 			var (
-				wantN     int = 1
-				wantErr       = errors.New("Delegate.Send error")
-				transport     = mock.NewTransport().RegisterSend(
+				wantN     = 1
+				wantErr   = errors.New("Delegate.Send error")
+				transport = mock.NewTransport().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return wantN, wantErr
 					},
@@ -140,7 +140,7 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantSeq   core.Seq = 1
 				wantCmd            = cmock.NewCmd()
-				wantN     int      = 2
+				wantN              = 2
 				wantErr   error    = nil
 				transport          = mock.NewTransport().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
@@ -163,7 +163,7 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantSeq    core.Seq = 1
 				wantResult          = cmock.NewResult()
-				wantN      int      = 3
+				wantN               = 3
 				wantErr             = errors.New("receive failed")
 				transport           = mock.NewTransport().RegisterReceive(
 					func() (seq core.Seq, r core.Result, n int, err error) {
