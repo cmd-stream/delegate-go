@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/cmd-stream/core-go"
-	cmock "github.com/cmd-stream/core-go/client/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
+	cmocks "github.com/cmd-stream/testkit-go/mocks/core/client"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -23,7 +23,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			wantN                    = 1
 			wantErr                  = errors.New("receive error")
 			wantCloseErr error       = nil
-			d                        = cmock.NewDelegate().RegisterReceive(
+			d                        = cmocks.NewDelegate().RegisterReceive(
 				func() (seq core.Seq, result core.Result, n int, err error) {
 					return 0, delegate.PongResult{}, 2, nil
 				},
@@ -62,7 +62,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 				start              = time.Now()
 				wantKeepaliveTime  = 2 * 200 * time.Millisecond
 				wantKeepaliveIntvl = 200 * time.Millisecond
-				d                  = cmock.NewDelegate().RegisterNSetSendDeadline(2,
+				d                  = cmocks.NewDelegate().RegisterNSetSendDeadline(2,
 					func(deadline time.Time) (err error) {
 						wantDeadline := time.Time{}
 						asserterror.SameTime(deadline, wantDeadline, delta, t)
@@ -123,7 +123,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			flushDelay         = 200 * time.Millisecond
 			wantKeepaliveTime  = 2 * 200 * time.Millisecond
 			wantKeepaliveIntvl = 200 * time.Millisecond
-			d                  = cmock.NewDelegate().RegisterFlush(
+			d                  = cmocks.NewDelegate().RegisterFlush(
 				func() (err error) { return nil },
 			).RegisterSetSendDeadline(
 				func(deadline time.Time) (err error) {
@@ -169,7 +169,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 
 	t.Run("Close should cancel ping sending", func(t *testing.T) {
 		var (
-			d = cmock.NewDelegate().RegisterClose(
+			d = cmocks.NewDelegate().RegisterClose(
 				func() (err error) { return nil },
 			)
 			mocks = []*mok.Mock{d.Mock}
@@ -189,7 +189,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			var (
 				done    = make(chan struct{})
 				wantErr = errors.New("close error")
-				d       = cmock.NewDelegate().RegisterClose(
+				d       = cmocks.NewDelegate().RegisterClose(
 					func() (err error) { return wantErr },
 				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
@@ -226,7 +226,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				done = make(chan struct{})
-				d    = cmock.NewDelegate().RegisterSetSendDeadline(
+				d    = cmocks.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
@@ -260,7 +260,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			var (
 				done    = make(chan struct{})
 				wantErr = errors.New("flush error")
-				d       = cmock.NewDelegate().RegisterFlush(
+				d       = cmocks.NewDelegate().RegisterFlush(
 					func() (err error) { return wantErr },
 				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },

@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/cmd-stream/core-go"
-	cmock "github.com/cmd-stream/core-go/testdata/mock"
 	"github.com/cmd-stream/delegate-go"
 	dcln "github.com/cmd-stream/delegate-go/client"
-	mock "github.com/cmd-stream/delegate-go/client/testdata/mock"
+	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
+	mocks "github.com/cmd-stream/testkit-go/mocks/delegate/client"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -25,7 +25,7 @@ func TestDelegate(t *testing.T) {
 	t.Run("New should check ServerInfo", func(t *testing.T) {
 		var (
 			wantErr   error = nil
-			conn            = cmock.NewConn()
+			conn            = cmocks.NewConn()
 			transport       = makeClientTransport(serverInfo)
 			mocks           = []*mok.Mock{conn.Mock, transport.Mock}
 		)
@@ -38,7 +38,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Transport.SetReceiveDeadline")
-				transport = mock.NewTransport().RegisterSetReceiveDeadline(
+				transport = mocks.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return wantErr
 					},
@@ -54,7 +54,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Transport.ReceiveServerInfo error")
-				transport = mock.NewTransport().RegisterSetReceiveDeadline(
+				transport = mocks.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -75,7 +75,7 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantErr         = dcln.ErrServerInfoMismatch
 				wrongServerInfo = []byte{1}
-				transport       = mock.NewTransport().RegisterSetReceiveDeadline(
+				transport       = mocks.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -97,7 +97,7 @@ func TestDelegate(t *testing.T) {
 			wantDeadline       = time.Now().Add(d)
 			wantErr      error = nil
 			ops                = []dcln.SetOption{dcln.WithServerInfoReceiveDuration(d)}
-			transport          = mock.NewTransport().RegisterSetReceiveDeadline(
+			transport          = mocks.NewTransport().RegisterSetReceiveDeadline(
 				func(deadline time.Time) (err error) {
 					asserterror.SameTime(deadline, wantDeadline, delta, t)
 					return
@@ -123,14 +123,14 @@ func TestDelegate(t *testing.T) {
 			var (
 				wantN     = 1
 				wantErr   = errors.New("Delegate.Send error")
-				transport = mock.NewTransport().RegisterSend(
+				transport = mocks.NewTransport().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return wantN, wantErr
 					},
 				)
 				delegate = dcln.NewWithoutInfo(transport)
 			)
-			n, err := delegate.Send(1, cmock.NewCmd())
+			n, err := delegate.Send(1, cmocks.NewCmd())
 			asserterror.Equal(n, wantN, t)
 			asserterror.EqualError(err, wantErr, t)
 		})
@@ -139,10 +139,10 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantSeq   core.Seq = 1
-				wantCmd            = cmock.NewCmd()
+				wantCmd            = cmocks.NewCmd()
 				wantN              = 2
 				wantErr   error    = nil
-				transport          = mock.NewTransport().RegisterSend(
+				transport          = mocks.NewTransport().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						asserterror.Equal(seq, wantSeq, t)
 						asserterror.EqualDeep(cmd, wantCmd, t)
@@ -162,10 +162,10 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantSeq    core.Seq = 1
-				wantResult          = cmock.NewResult()
+				wantResult          = cmocks.NewResult()
 				wantN               = 3
 				wantErr             = errors.New("receive failed")
-				transport           = mock.NewTransport().RegisterReceive(
+				transport           = mocks.NewTransport().RegisterReceive(
 					func() (seq core.Seq, r core.Result, n int, err error) {
 						return wantSeq, wantResult, wantN, wantErr
 					},
@@ -194,7 +194,7 @@ func TestDelegate(t *testing.T) {
 	t.Run("LocalAddr should return Transport.LocalAddr", func(t *testing.T) {
 		var (
 			wantAddr  = &net.IPAddr{IP: net.ParseIP("127.0.0.1:9000")}
-			transport = mock.NewTransport().RegisterLocalAddr(
+			transport = mocks.NewTransport().RegisterLocalAddr(
 				func() (a net.Addr) {
 					return wantAddr
 				},
@@ -210,7 +210,7 @@ func TestDelegate(t *testing.T) {
 	t.Run("RemoteAddr should return Transport.RemoteAddr", func(t *testing.T) {
 		var (
 			wantAddr  = &net.IPAddr{IP: net.ParseIP("127.0.0.1:9000")}
-			transport = mock.NewTransport().RegisterRemoteAddr(
+			transport = mocks.NewTransport().RegisterRemoteAddr(
 				func() (addr net.Addr) {
 					return wantAddr
 				},
@@ -227,7 +227,7 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("Close error")
-				transport = mock.NewTransport().RegisterClose(
+				transport = mocks.NewTransport().RegisterClose(
 					func() (err error) {
 						return wantErr
 					},
@@ -239,8 +239,8 @@ func TestDelegate(t *testing.T) {
 		})
 }
 
-func makeClientTransport(serverInfo delegate.ServerInfo) mock.Transport {
-	return mock.NewTransport().RegisterSetReceiveDeadline(
+func makeClientTransport(serverInfo delegate.ServerInfo) mocks.Transport {
+	return mocks.NewTransport().RegisterSetReceiveDeadline(
 		func(deadline time.Time) (err error) {
 			return nil
 		},

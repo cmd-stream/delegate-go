@@ -1,5 +1,7 @@
-github.com/cmd-stream/core-go v0.0.0-20251027204658-b87de59c010f h1:iADLWy9Mms77uqwSzDQGdbmLhV3Cbe8vjxXZlwJbtkA=
-github.com/cmd-stream/core-go v0.0.0-20251027204658-b87de59c010f/go.mod h1:cDnp3kDEWudlKh2Qx4mziDvfpR4WJftjMe0aH14+cNo=
+github.com/cmd-stream/core-go v0.0.0-20251102020427-f23e62426486 h1:W2nkjUDYccnWf6wQnwM5UZGSGiKUbaxV2DPs0BQhprA=
+github.com/cmd-stream/core-go v0.0.0-20251102020427-f23e62426486/go.mod h1:UDKu4nEJWsUAebqQAzMvlhf87zPS5Kf57+SSXXOrl2c=
+github.com/cmd-stream/testkit-go v0.0.0-20251102015907-0ae91640601a h1:zOPbDTAgLQTmIR+B6Jr0TiibVy7BsgdQsPzNuKvt1cY=
+github.com/cmd-stream/testkit-go v0.0.0-20251102015907-0ae91640601a/go.mod h1:lXvkEKawzV+ukHhSsNd30J1wDAtZ8uQZMasHpqxXZns=
 github.com/mus-format/common-go v0.0.0-20251026152644-9f5ac6728d8a h1:tLF20eBk2jdZHOy3Kyv8Wh3KdhxnIDadmrmXYE7sprc=
 github.com/mus-format/common-go v0.0.0-20251026152644-9f5ac6728d8a/go.mod h1:6Dv72knd/gHi0Scn4OEFPQbnl7RrQlQDfUOOkKP/nZc=
 github.com/mus-format/mus-stream-go v0.7.2 h1:ShFtTIBEHyPSGcE+ilAPn5xd4O5fp1S/Yi4iPGXiR8s=
