@@ -6,8 +6,8 @@
 
 **delegate-go** provides client and server delegate implementations for the
 `cmd-stream` library, based on the `client.Delegate` and `server.Delegate`
-interfaces defined in `core-go`. These implementations utilize an abstract
-transport layer for robust data exchange.
+interfaces defined in `core-go`. Both delegates utilize an abstract transport 
+layer for robust data exchange.
 
 This module allows the server to initialize the client connection by sending a
 `ServerInfo` message, typically used to indicate a set of supported Commands.
