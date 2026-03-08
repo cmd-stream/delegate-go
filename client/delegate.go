@@ -16,9 +16,9 @@ import (
 // Returns ErrServerInfoMismatch if the received ServerInfo does not match
 // the specified one.
 func New[T any](info delegate.ServerInfo, transport Transport[T],
-	ops ...SetOption,
+	opts ...SetOption,
 ) (d Delegate[T], err error) {
-	Apply(ops, &d.options)
+	Apply(opts, &d.options)
 	err = checkServerInfo(d.options.ServerInfoReceiveDuration, transport, info)
 	if err != nil {
 		return

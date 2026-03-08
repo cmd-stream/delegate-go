@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/cmd-stream/core-go"
+	cclnmock "github.com/cmd-stream/core-go/test/mock/client"
 	"github.com/cmd-stream/delegate-go"
-	cmocks "github.com/cmd-stream/testkit-go/mocks/core/client"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -23,7 +23,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			wantN                    = 1
 			wantErr                  = errors.New("receive error")
 			wantCloseErr error       = nil
-			d                        = cmocks.NewDelegate().RegisterReceive(
+			d                        = cclnmock.NewDelegate().RegisterReceive(
 				func() (seq core.Seq, result core.Result, n int, err error) {
 					return 0, delegate.PongResult{}, 2, nil
 				},
@@ -43,15 +43,15 @@ func TestKeepaliveDelegate(t *testing.T) {
 			mocks               = []*mok.Mock{d.Mock}
 			seq, result, n, err = dlgt.Receive()
 		)
-		asserterror.Equal(err, wantErr, t)
-		asserterror.Equal(seq, wantSeq, t)
-		asserterror.Equal(result, wantResult, t)
-		asserterror.Equal(n, wantN, t)
+		asserterror.Equal(t, err, wantErr)
+		asserterror.Equal(t, seq, wantSeq)
+		asserterror.Equal(t, result, wantResult)
+		asserterror.Equal(t, n, wantN)
 
 		err = dlgt.Close()
-		asserterror.Equal(err, wantCloseErr, t)
+		asserterror.Equal(t, err, wantCloseErr)
 
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("KeepaliveDelegate should send Ping Commands if no Commands was send",
@@ -62,10 +62,10 @@ func TestKeepaliveDelegate(t *testing.T) {
 				start              = time.Now()
 				wantKeepaliveTime  = 2 * 200 * time.Millisecond
 				wantKeepaliveIntvl = 200 * time.Millisecond
-				d                  = cmocks.NewDelegate().RegisterNSetSendDeadline(2,
+				d                  = cclnmock.NewDelegate().RegisterNSetSendDeadline(2,
 					func(deadline time.Time) (err error) {
 						wantDeadline := time.Time{}
-						asserterror.SameTime(deadline, wantDeadline, delta, t)
+						asserterror.SameTime(t, deadline, wantDeadline, delta)
 						return
 					},
 				).RegisterSend(
@@ -74,9 +74,9 @@ func TestKeepaliveDelegate(t *testing.T) {
 							wantTime   = start.Add(wantKeepaliveTime)
 							actualTime = time.Now()
 						)
-						asserterror.SameTime(actualTime, wantTime, delta, t)
-						asserterror.Equal(seq, 0, t)
-						asserterror.EqualDeep(cmd, wantCmd, t)
+						asserterror.SameTime(t, actualTime, wantTime, delta)
+						asserterror.Equal(t, seq, 0)
+						asserterror.EqualDeep(t, cmd, wantCmd)
 						return 1, nil
 					},
 				).RegisterFlush(
@@ -87,9 +87,9 @@ func TestKeepaliveDelegate(t *testing.T) {
 							wantTime   = start.Add(wantKeepaliveTime).Add(wantKeepaliveIntvl)
 							actualTime = time.Now()
 						)
-						asserterror.SameTime(actualTime, wantTime, delta, t)
-						asserterror.Equal(seq, 0, t)
-						asserterror.EqualDeep(cmd, wantCmd, t)
+						asserterror.SameTime(t, actualTime, wantTime, delta)
+						asserterror.Equal(t, seq, 0)
+						asserterror.EqualDeep(t, cmd, wantCmd)
 						return 1, nil
 					},
 				).RegisterFlush(
@@ -112,8 +112,8 @@ func TestKeepaliveDelegate(t *testing.T) {
 			}
 
 			err := dlgt.Close()
-			asserterror.EqualError(err, nil, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Command flushing should delay a ping", func(t *testing.T) {
@@ -123,12 +123,12 @@ func TestKeepaliveDelegate(t *testing.T) {
 			flushDelay         = 200 * time.Millisecond
 			wantKeepaliveTime  = 2 * 200 * time.Millisecond
 			wantKeepaliveIntvl = 200 * time.Millisecond
-			d                  = cmocks.NewDelegate().RegisterFlush(
+			d                  = cclnmock.NewDelegate().RegisterFlush(
 				func() (err error) { return nil },
 			).RegisterSetSendDeadline(
 				func(deadline time.Time) (err error) {
 					wantDeadline := time.Time{}
-					asserterror.SameTime(deadline, wantDeadline, delta, t)
+					asserterror.SameTime(t, deadline, wantDeadline, delta)
 					return
 				},
 			).RegisterSend(
@@ -137,7 +137,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 						wantTime   = start.Add(flushDelay).Add(wantKeepaliveTime)
 						actualTime = time.Now()
 					)
-					asserterror.SameTime(actualTime, wantTime, delta, t)
+					asserterror.SameTime(t, actualTime, wantTime, delta)
 					return
 				},
 			).RegisterFlush(
@@ -154,7 +154,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 		time.Sleep(flushDelay)
 
 		err := dlgt.Flush()
-		asserterror.EqualError(err, nil, t)
+		asserterror.EqualError(t, err, nil)
 
 		select {
 		case <-done:
@@ -163,13 +163,13 @@ func TestKeepaliveDelegate(t *testing.T) {
 		}
 
 		err = dlgt.Close()
-		asserterror.EqualError(err, nil, t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualError(t, err, nil)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("Close should cancel ping sending", func(t *testing.T) {
 		var (
-			d = cmocks.NewDelegate().RegisterClose(
+			d = cclnmock.NewDelegate().RegisterClose(
 				func() (err error) { return nil },
 			)
 			mocks = []*mok.Mock{d.Mock}
@@ -178,10 +178,10 @@ func TestKeepaliveDelegate(t *testing.T) {
 			)
 		)
 		err := dlgt.Close()
-		asserterror.EqualError(err, nil, t)
+		asserterror.EqualError(t, err, nil)
 
 		time.Sleep(400 * time.Millisecond)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("If ClientDelegate.Close fails with an error, Close should return it and ping shold not be canceled",
@@ -189,7 +189,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			var (
 				done    = make(chan struct{})
 				wantErr = errors.New("close error")
-				d       = cmocks.NewDelegate().RegisterClose(
+				d       = cclnmock.NewDelegate().RegisterClose(
 					func() (err error) { return wantErr },
 				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
@@ -209,7 +209,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			dlgt.Keepalive(&sync.Mutex{})
 
 			err := dlgt.Close()
-			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualError(t, err, wantErr)
 
 			select {
 			case <-done:
@@ -218,15 +218,15 @@ func TestKeepaliveDelegate(t *testing.T) {
 			}
 
 			err = dlgt.Close()
-			asserterror.EqualError(err, nil, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If ping sending fails with an error, nothing should happen",
 		func(t *testing.T) {
 			var (
 				done = make(chan struct{})
-				d    = cmocks.NewDelegate().RegisterSetSendDeadline(
+				d    = cclnmock.NewDelegate().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
@@ -251,8 +251,8 @@ func TestKeepaliveDelegate(t *testing.T) {
 			}
 
 			err := dlgt.Close()
-			asserterror.EqualError(err, nil, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If ClientDelegate.Flush fails with an error, Flush should return it and ping sending should not be delayed",
@@ -260,7 +260,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			var (
 				done    = make(chan struct{})
 				wantErr = errors.New("flush error")
-				d       = cmocks.NewDelegate().RegisterFlush(
+				d       = cclnmock.NewDelegate().RegisterFlush(
 					func() (err error) { return wantErr },
 				).RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
@@ -283,7 +283,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			dlgt.Keepalive(&sync.Mutex{})
 
 			err := dlgt.Flush()
-			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualError(t, err, wantErr)
 
 			select {
 			case <-done:
@@ -292,7 +292,7 @@ func TestKeepaliveDelegate(t *testing.T) {
 			}
 
 			err = dlgt.Close()
-			asserterror.EqualError(err, nil, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, nil)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 }

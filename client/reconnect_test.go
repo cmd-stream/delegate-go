@@ -10,10 +10,10 @@ import (
 
 	"github.com/cmd-stream/core-go"
 	ccln "github.com/cmd-stream/core-go/client"
+	cmock "github.com/cmd-stream/core-go/test/mock"
 	"github.com/cmd-stream/delegate-go"
 	dcln "github.com/cmd-stream/delegate-go/client"
-	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
-	mocks "github.com/cmd-stream/testkit-go/mocks/delegate/client"
+	clnmock "github.com/cmd-stream/delegate-go/test/mock/client"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -29,7 +29,7 @@ func TestReconnectDelegate(t *testing.T) {
 			var (
 				wantErr   error = nil
 				transport       = makeClientTransport(serverInfo)
-				factory         = mocks.NewTransportFactory().RegisterNew(
+				factory         = clnmock.NewTransportFactory().RegisterNew(
 					func() (dcln.Transport[any], error) {
 						return transport, nil
 					},
@@ -37,19 +37,19 @@ func TestReconnectDelegate(t *testing.T) {
 				mocks = []*mok.Mock{transport.Mock, factory.Mock}
 			)
 			_, err := dcln.NewReconnect(serverInfo, factory, ops...)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If ServerInfo check fails with an error, NewReconnect should return it",
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("SetReceiveDeadline error")
-				transport = mocks.NewTransport().RegisterSetReceiveDeadline(
+				transport = clnmock.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return wantErr
 					})
-				factory = mocks.NewTransportFactory().RegisterNew(
+				factory = clnmock.NewTransportFactory().RegisterNew(
 					func() (dcln.Transport[any], error) {
 						return transport, nil
 					},
@@ -57,15 +57,15 @@ func TestReconnectDelegate(t *testing.T) {
 				mocks = []*mok.Mock{transport.Mock, factory.Mock}
 			)
 			_, err := dcln.NewReconnect(serverInfo, factory, ops...)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If ClientTransportFactory.New fails with an error, NewReconnect should return it",
 		func(t *testing.T) {
 			var (
 				wantErr = errors.New("transport creation error")
-				factory = mocks.NewTransportFactory().RegisterNew(
+				factory = clnmock.NewTransportFactory().RegisterNew(
 					func() (dcln.Transport[any], error) {
 						return nil, wantErr
 					},
@@ -73,15 +73,15 @@ func TestReconnectDelegate(t *testing.T) {
 				mocks = []*mok.Mock{factory.Mock}
 			)
 			_, err := dcln.NewReconnect(serverInfo, factory, ops...)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Reconnect should work correctly", func(t *testing.T) {
 		var (
 			transport1    = makeClientTransport(serverInfo)
 			wantTransport = makeClientTransport(serverInfo)
-			factory       = mocks.NewTransportFactory().RegisterNew(
+			factory       = clnmock.NewTransportFactory().RegisterNew(
 				func() (dcln.Transport[any], error) {
 					return transport1, nil
 				},
@@ -107,7 +107,7 @@ func TestReconnectDelegate(t *testing.T) {
 			t.Errorf("unexpected transport, want '%v' actual '%v'", wantTransport,
 				transport)
 		}
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("Reconnect should return ErrClosed, if the delegate is closed",
@@ -117,7 +117,7 @@ func TestReconnectDelegate(t *testing.T) {
 				transport1 = makeClientTransport(serverInfo).RegisterClose(
 					func() (err error) { return nil },
 				)
-				factory = mocks.NewTransportFactory().RegisterNew(
+				factory = clnmock.NewTransportFactory().RegisterNew(
 					func() (dcln.Transport[any], error) {
 						return transport1, nil
 					},
@@ -137,8 +137,8 @@ func TestReconnectDelegate(t *testing.T) {
 				}
 			}()
 			err := delegate.Reconnect()
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If Transport.Send fails with an error, Send should return it",
@@ -146,7 +146,7 @@ func TestReconnectDelegate(t *testing.T) {
 			var (
 				wantN   = 1
 				wantErr = errors.New("Delegate.Send error")
-				clnTran = mocks.NewTransport().RegisterSend(
+				clnTran = clnmock.NewTransport().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
 						return wantN, wantErr
 					},
@@ -159,23 +159,23 @@ func TestReconnectDelegate(t *testing.T) {
 				delegate = dcln.NewReconnectWithoutInfo[any](nil, nil, tran,
 					dcln.Options{})
 			)
-			n, err := delegate.Send(1, cmocks.NewCmd())
-			asserterror.Equal(n, wantN, t)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			n, err := delegate.Send(1, cmock.NewCmd())
+			asserterror.Equal(t, n, wantN)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Transport.Send should send same seq and cmd as Send",
 		func(t *testing.T) {
 			var (
 				wantSeq core.Seq = 1
-				wantCmd          = cmocks.NewCmd()
+				wantCmd          = cmock.NewCmd()
 				wantN            = 2
 				wantErr error    = nil
-				clnTran          = mocks.NewTransport().RegisterSend(
+				clnTran          = clnmock.NewTransport().RegisterSend(
 					func(seq core.Seq, cmd core.Cmd[any]) (n int, err error) {
-						asserterror.Equal(seq, wantSeq, t)
-						asserterror.EqualDeep(cmd, wantCmd, t)
+						asserterror.Equal(t, seq, wantSeq)
+						asserterror.EqualDeep(t, cmd, wantCmd)
 						return wantN, wantErr
 					},
 				)
@@ -188,19 +188,19 @@ func TestReconnectDelegate(t *testing.T) {
 					dcln.Options{})
 			)
 			n, err := delegate.Send(wantSeq, wantCmd)
-			asserterror.Equal(n, wantN, t)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.Equal(t, n, wantN)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Receive should return same seq and cmd as Tranposrt.Receive",
 		func(t *testing.T) {
 			var (
 				wantSeq    core.Seq = 1
-				wantResult          = cmocks.NewResult()
+				wantResult          = cmock.NewResult()
 				wantN               = 3
 				wantErr             = errors.New("receive failed")
-				clnTran             = mocks.NewTransport().RegisterReceive(
+				clnTran             = clnmock.NewTransport().RegisterReceive(
 					func() (seq core.Seq, r core.Result, n int, err error) {
 						return wantSeq, wantResult, wantN, wantErr
 					},
@@ -214,11 +214,11 @@ func TestReconnectDelegate(t *testing.T) {
 					dcln.Options{})
 			)
 			seq, result, n, err := delegate.Receive()
-			asserterror.Equal(seq, wantSeq, t)
-			asserterror.EqualDeep(result, wantResult, t)
-			asserterror.Equal(n, wantN, t)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.Equal(t, seq, wantSeq)
+			asserterror.EqualDeep(t, result, wantResult)
+			asserterror.Equal(t, n, wantN)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("Conf should return the options that was obtained during creation",
@@ -229,13 +229,13 @@ func TestReconnectDelegate(t *testing.T) {
 					wantOptions)
 			)
 			options := delegate.Options()
-			asserterror.EqualDeep(options, wantOptions, t)
+			asserterror.EqualDeep(t, options, wantOptions)
 		})
 
 	t.Run("LocalAddr should return Transport.LocalAddr", func(t *testing.T) {
 		var (
 			wantAddr = &net.IPAddr{IP: net.ParseIP("127.0.0.1:9000")}
-			clnTran  = mocks.NewTransport().RegisterLocalAddr(
+			clnTran  = clnmock.NewTransport().RegisterLocalAddr(
 				func() (a net.Addr) { return wantAddr },
 			)
 			tran = &atomic.Value{}
@@ -250,13 +250,13 @@ func TestReconnectDelegate(t *testing.T) {
 		if addr != wantAddr {
 			t.Errorf("unexpected addr, want '%v' actual '%v'", wantAddr, addr)
 		}
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("RemoteAddr should return Transport.RemoteAddr", func(t *testing.T) {
 		var (
 			wantAddr = &net.IPAddr{IP: net.ParseIP("127.0.0.1:9000")}
-			clnTran  = mocks.NewTransport().RegisterRemoteAddr(
+			clnTran  = clnmock.NewTransport().RegisterRemoteAddr(
 				func() (addr net.Addr) { return wantAddr },
 			)
 			tran = &atomic.Value{}
@@ -271,14 +271,14 @@ func TestReconnectDelegate(t *testing.T) {
 		if addr != wantAddr {
 			t.Errorf("unexpected addr, want '%v' actual '%v'", wantAddr, addr)
 		}
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("If Tranposrt.Close fails with an error, Close should return it",
 		func(t *testing.T) {
 			var (
 				wantErr = errors.New("Close error")
-				clnTran = mocks.NewTransport().RegisterClose(
+				clnTran = clnmock.NewTransport().RegisterClose(
 					func() (err error) {
 						return wantErr
 					},
@@ -292,8 +292,8 @@ func TestReconnectDelegate(t *testing.T) {
 					dcln.Options{})
 			)
 			err := delegate.Close()
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("SetSendDeadline should call corresponding Transport.SetSendDeadline",
@@ -301,9 +301,9 @@ func TestReconnectDelegate(t *testing.T) {
 			var (
 				wantErr     = errors.New("SetSendDeadline error")
 				wantDeadine = time.Now()
-				clnTran     = mocks.NewTransport().RegisterSetSendDeadline(
+				clnTran     = clnmock.NewTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) {
-						asserterror.Equal(deadline, wantDeadine, t)
+						asserterror.Equal(t, deadline, wantDeadine)
 						return wantErr
 					},
 				)
@@ -327,7 +327,7 @@ func TestReconnectDelegate(t *testing.T) {
 	t.Run("Flush should call corresponding Transport.Flush", func(t *testing.T) {
 		var (
 			wantErr = errors.New("Flush error")
-			clnTran = mocks.NewTransport().RegisterFlush(
+			clnTran = clnmock.NewTransport().RegisterFlush(
 				func() (err error) { return wantErr },
 			)
 			tran = &atomic.Value{}
@@ -338,8 +338,8 @@ func TestReconnectDelegate(t *testing.T) {
 			delegate = dcln.NewReconnectWithoutInfo[any](nil, nil, tran, dcln.Options{})
 		)
 		err := delegate.Flush()
-		asserterror.EqualError(err, wantErr, t)
-		asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+		asserterror.EqualError(t, err, wantErr)
+		asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 	})
 
 	t.Run("SetReceiveDeadline should call corresponding Transport.SetReceiveDeadline",
@@ -347,7 +347,7 @@ func TestReconnectDelegate(t *testing.T) {
 			var (
 				wantErr     = errors.New("SetReceiveDeadline error")
 				wantDeadine = time.Now()
-				clnTran     = mocks.NewTransport().RegisterSetReceiveDeadline(
+				clnTran     = clnmock.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						if deadline != wantDeadine {
 							return fmt.Errorf("unexpected deadline %v, want %v", deadline,
@@ -365,15 +365,15 @@ func TestReconnectDelegate(t *testing.T) {
 					dcln.Options{})
 			)
 			err := delegate.SetReceiveDeadline(wantDeadine)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If ServerInfo check fails with the ErrServerInfoMismatch, Reconnect should return it",
 		func(t *testing.T) {
 			var (
 				wantErr = dcln.ErrServerInfoMismatch
-				clnTran = mocks.NewTransport().RegisterSetReceiveDeadline(
+				clnTran = clnmock.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						return nil
 					},
@@ -386,7 +386,7 @@ func TestReconnectDelegate(t *testing.T) {
 			)
 			tran.Store(clnTran)
 			var (
-				factory = mocks.NewTransportFactory().RegisterNew(
+				factory = clnmock.NewTransportFactory().RegisterNew(
 					func() (dcln.Transport[any], error) {
 						return clnTran, nil
 					},
@@ -397,8 +397,8 @@ func TestReconnectDelegate(t *testing.T) {
 					dcln.Options{})
 			)
 			err := delegate.Reconnect()
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If ServerInfo check fails with an error, Reconnect should try again",
@@ -406,7 +406,7 @@ func TestReconnectDelegate(t *testing.T) {
 			var (
 				wantErr   = ccln.ErrClosed
 				closeFlag uint32
-				clnTran   = mocks.NewTransport().RegisterSetReceiveDeadline(
+				clnTran   = clnmock.NewTransport().RegisterSetReceiveDeadline(
 					func(deadline time.Time) (err error) {
 						closeFlag = 1
 						return errors.New("SetReceiveDeadline error")
@@ -416,7 +416,7 @@ func TestReconnectDelegate(t *testing.T) {
 			)
 			tran.Store(clnTran)
 			var (
-				factory = mocks.NewTransportFactory().RegisterNew(
+				factory = clnmock.NewTransportFactory().RegisterNew(
 					func() (dcln.Transport[any], error) {
 						return clnTran, nil
 					},
@@ -426,7 +426,7 @@ func TestReconnectDelegate(t *testing.T) {
 					dcln.Options{})
 			)
 			err := delegate.Reconnect()
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 }

@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
+	cmock "github.com/cmd-stream/core-go/test/mock"
 	"github.com/cmd-stream/delegate-go"
 	dsrv "github.com/cmd-stream/delegate-go/server"
-	cmocks "github.com/cmd-stream/testkit-go/mocks/core"
-	mocks "github.com/cmd-stream/testkit-go/mocks/delegate/server"
+	srvmock "github.com/cmd-stream/delegate-go/test/mock/server"
 	asserterror "github.com/ymz-ncnk/assert/error"
 	"github.com/ymz-ncnk/mok"
 )
@@ -44,8 +44,8 @@ func TestDelegate(t *testing.T) {
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("send ServerInfo error")
-				conn      = cmocks.NewConn()
-				transport = mocks.NewTransport().RegisterSetSendDeadline(
+				conn      = cmock.NewConn()
+				transport = srvmock.NewTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return nil },
 				).RegisterSendServerInfo(
 					func(info delegate.ServerInfo) (err error) { return wantErr },
@@ -57,19 +57,19 @@ func TestDelegate(t *testing.T) {
 				mocks    = []*mok.Mock{conn.Mock, transport.Mock, factory.Mock}
 			)
 			err := delegate.Handle(context.Background(), conn)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If Transport.Handle fails with an error, Handle should return it",
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("done")
-				conn      = cmocks.NewConn()
+				conn      = cmock.NewConn()
 				transport = makeTransport(time.Now(), serverInfo,
 					wantServerInfoSendDuration, delta, t)
 				factory = makeTransportFactory(conn, transport, t)
-				handler = mocks.NewTransportHandler().RegisterHandle(
+				handler = srvmock.NewTransportHandler().RegisterHandle(
 					func(ctx context.Context, transport dsrv.Transport[any]) error {
 						return wantErr
 					},
@@ -81,16 +81,16 @@ func TestDelegate(t *testing.T) {
 				}
 			)
 			err := delegate.Handle(context.Background(), conn)
-			asserterror.EqualError(err, wantErr, t)
-			asserterror.EqualDeep(mok.CheckCalls(mocks), mok.EmptyInfomap, t)
+			asserterror.EqualError(t, err, wantErr)
+			asserterror.EqualDeep(t, mok.CheckCalls(mocks), mok.EmptyInfomap)
 		})
 
 	t.Run("If Transport.SetSendDeadline fails with an error on ServerInfo send, Handle should return it",
 		func(t *testing.T) {
 			var (
 				wantErr   = errors.New("SendServerInfo error")
-				conn      = cmocks.NewConn()
-				transport = mocks.NewTransport().RegisterSetSendDeadline(
+				conn      = cmock.NewConn()
+				transport = srvmock.NewTransport().RegisterSetSendDeadline(
 					func(deadline time.Time) (err error) { return wantErr },
 				).RegisterClose(
 					func() (err error) { return nil },
@@ -99,15 +99,15 @@ func TestDelegate(t *testing.T) {
 				delegate = dsrv.New(serverInfo, factory, nil, ops...)
 				err      = delegate.Handle(context.Background(), conn)
 			)
-			asserterror.EqualError(err, wantErr, t)
+			asserterror.EqualError(t, err, wantErr)
 		})
 }
 
 func makeTransportFactory(conn net.Conn,
 	transport dsrv.Transport[any],
 	t *testing.T,
-) mocks.TransportFactory {
-	return mocks.NewTransportFactory().RegisterNew(
+) srvmock.TransportFactory {
+	return srvmock.NewTransportFactory().RegisterNew(
 		func(c net.Conn) dsrv.Transport[any] {
 			if !reflect.DeepEqual(conn, conn) {
 				t.Errorf("unepxected conn, want '%v' actual '%v'", conn, c)
@@ -121,16 +121,16 @@ func makeTransport(startTime time.Time, info delegate.ServerInfo,
 	serverInfoSendDuration time.Duration,
 	delta time.Duration,
 	t *testing.T,
-) mocks.Transport {
-	return mocks.NewTransport().RegisterSetSendDeadline(
+) srvmock.Transport {
+	return srvmock.NewTransport().RegisterSetSendDeadline(
 		func(deadline time.Time) (err error) {
 			wantDeadline := startTime.Add(serverInfoSendDuration)
-			asserterror.SameTime(deadline, wantDeadline, delta, t)
+			asserterror.SameTime(t, deadline, wantDeadline, delta)
 			return nil
 		},
 	).RegisterSendServerInfo(
 		func(i delegate.ServerInfo) (error error) {
-			asserterror.EqualDeep(i, info, t)
+			asserterror.EqualDeep(t, i, info)
 			return nil
 		},
 	)

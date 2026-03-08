@@ -13,12 +13,12 @@ import (
 // Panics with ErrEmptyInfo if ServerInfo is empty.
 func New[T any](info delegate.ServerInfo, factory TransportFactory[T],
 	handler TransportHandler[T],
-	ops ...SetOption,
+	opts ...SetOption,
 ) (d Delegate[T]) {
 	if len(info) == 0 {
 		panic(ErrEmptyInfo)
 	}
-	Apply(ops, &d.options)
+	Apply(opts, &d.options)
 	d.info = info
 	d.factory = factory
 	d.handler = handler
